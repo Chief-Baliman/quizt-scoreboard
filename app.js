@@ -111,6 +111,7 @@ const dom = {
   adminLeagueQuarter: $("#adminLeagueQuarter"),
   adminLeagueAllTime: $("#adminLeagueAllTime"),
   leagueLastSaveBox: $("#leagueLastSaveBox"),
+  leagueDebugBox: $("#leagueDebugBox"),
   leagueResultsList: $("#leagueResultsList")
 };
 
@@ -1178,11 +1179,44 @@ function normalizeLeagueTeamName(name = "") {
   return String(name || "").trim().replace(/\s+/g, " ") || "Unbenanntes Team";
 }
 
+function normalizeLeagueTeamsValue(teams) {
+  if (Array.isArray(teams)) return teams;
+  if (teams && typeof teams === "object") return Object.values(teams);
+  return [];
+}
+
+function buildLeagueEntryFromPending() {
+  if (!pendingLeagueImport) return null;
+  const now = Date.now();
+  return {
+    id: `event_${pendingLeagueImport.id}`,
+    type: "event",
+    eventId: pendingLeagueImport.id,
+    code: pendingLeagueImport.code,
+    title: pendingLeagueImport.title,
+    quarter: pendingLeagueImport.quarter,
+    createdAt: getExistingLeagueEntryForEvent(pendingLeagueImport.id)?.createdAt || now,
+    updatedAt: now,
+    teams: pendingLeagueImport.teams.map((team) => ({
+      name: normalizeLeagueTeamName(team.name),
+      place: team.place,
+      quizPoints: team.score,
+      points: scoreNumber(team.points)
+    }))
+  };
+}
+
 function getRenderableLeagueResults() {
   const merged = { ...(leagueResults || {}) };
   if (lastSavedLeagueEntry?.id && !merged[lastSavedLeagueEntry.id]) {
     merged[lastSavedLeagueEntry.id] = lastSavedLeagueEntry;
   }
+
+  const pendingEntry = buildLeagueEntryFromPending();
+  if (pendingEntry?.id && !merged[pendingEntry.id]) {
+    merged[pendingEntry.id] = { ...pendingEntry, type: "preview" };
+  }
+
   return merged;
 }
 
@@ -1212,7 +1246,7 @@ function calculateLeagueTables(results = leagueResults) {
 
   Object.values(results || {}).forEach((entry) => {
     if (!entry || entry.deleted) return;
-    const teams = Array.isArray(entry.teams) ? entry.teams : [];
+    const teams = normalizeLeagueTeamsValue(entry.teams);
     teams.forEach((team) => {
       const name = normalizeLeagueTeamName(team.name);
       const points = scoreNumber(team.points);
@@ -1281,6 +1315,11 @@ function renderAdminLeague() {
   renderLastSavedLeagueEntry(lastSavedLeagueEntry);
 
   const results = Object.values(getRenderableLeagueResults()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const savedResultsCount = Object.keys(leagueResults || {}).length;
+  const previewCount = pendingLeagueImport ? 1 : 0;
+  if (dom.leagueDebugBox) {
+    dom.leagueDebugBox.textContent = `Liga-Status: ${savedResultsCount} gespeicherte Einträge geladen${previewCount ? " · 1 vorbereitete Übernahme sichtbar" : ""}.`;
+  }
 
   if (!dom.leagueResultsList) return;
   if (!results.length) {
@@ -1292,12 +1331,12 @@ function renderAdminLeague() {
     <article class="league-result-item">
       <div>
         <strong>${escapeHtml(entry.title || "Liga-Eintrag")}</strong>
-        <small>${escapeHtml(entry.quarter || "")} · ${formatDate(entry.createdAt)} · ${entry.type === "manual" ? "Manuell" : "Event"}</small>
+        <small>${escapeHtml(entry.quarter || "")} · ${formatDate(entry.createdAt)} · ${entry.type === "manual" ? "Manuell" : entry.type === "preview" ? "Vorbereitet, noch nicht gespeichert" : "Event"}</small>
       </div>
       <div class="league-result-teams">
-        ${(entry.teams || []).map((team) => `<span>${escapeHtml(team.name)}: ${scoreNumber(team.points)}</span>`).join("")}
+        ${normalizeLeagueTeamsValue(entry.teams).map((team) => `<span>${escapeHtml(team.name)}: ${scoreNumber(team.points)}</span>`).join("")}
       </div>
-      <button class="tiny-btn danger" type="button" data-delete-league-result="${escapeHtml(entry.id)}">Entfernen</button>
+      ${entry.type === "preview" ? "<span class='tiny-status'>Noch speichern</span>" : `<button class="tiny-btn danger" type="button" data-delete-league-result="${escapeHtml(entry.id)}">Entfernen</button>`}
     </article>
   `).join("");
 
@@ -1398,6 +1437,7 @@ function prepareLeagueImport() {
 
   dom.leagueImportBox?.classList.remove("hidden");
   renderLeagueImportRows();
+  renderAdminLeague();
   dom.leagueImportBox?.scrollIntoView({ behavior: "smooth", block: "center" });
   showMessage(dom.editorMessage, "Liga-Übernahme vorbereitet. Bitte prüfe die Liste direkt hier im Event.", "success");
   showMessage(
@@ -1478,23 +1518,13 @@ async function saveLeagueImport(event) {
     return;
   }
 
-  const now = Date.now();
-  const entry = {
-    id: `event_${pendingLeagueImport.id}`,
-    type: "event",
-    eventId: pendingLeagueImport.id,
-    code: pendingLeagueImport.code,
-    title: pendingLeagueImport.title,
-    quarter: pendingLeagueImport.quarter,
-    createdAt: getExistingLeagueEntryForEvent(pendingLeagueImport.id)?.createdAt || now,
-    updatedAt: now,
-    teams: pendingLeagueImport.teams.map((team) => ({
-      name: normalizeLeagueTeamName(team.name),
-      place: team.place,
-      quizPoints: team.score,
-      points: scoreNumber(team.points)
-    }))
-  };
+  const entry = buildLeagueEntryFromPending();
+
+  if (!entry) {
+    showMessage(dom.editorMessage, "Liga-Eintrag konnte nicht erzeugt werden.", "error");
+    showMessage(dom.leagueMessage, "Liga-Eintrag konnte nicht erzeugt werden.", "error");
+    return;
+  }
 
   showMessage(dom.editorMessage, "Liga-Eintrag wird gespeichert ...");
   showMessage(dom.leagueMessage, "Liga-Eintrag wird gespeichert ...");

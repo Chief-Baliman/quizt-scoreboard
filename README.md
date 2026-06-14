@@ -1,4 +1,4 @@
-# Quizt Scoreboard v45
+# Quizt Scoreboard v46
 
 Responsive Punkteübersicht für Quizt Events mit Firebase Realtime Database und GitHub Pages.
 
@@ -147,3 +147,12 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
 - Liga-Tabellen verwenden zusätzlich einen lokalen Fallback, falls Firebase den Listener verzögert aktualisiert.
 - Nach dem Speichern wird automatisch zum gespeicherten Liga-Eintrag gescrollt.
 - Hinweis ergänzt, wenn die öffentliche Liga-Anzeige noch nicht aktiviert ist.
+
+
+## Änderungen in v46
+
+- Speichern-Button zusätzlich direkt oben in der Liga-Prüfliste ergänzt.
+- Vorbereitete Liga-Übernahme wird bereits als Vorschau in den Liga-Tabellen angezeigt.
+- Liga-Status-Zeile ergänzt: zeigt, wie viele gespeicherte Einträge geladen wurden.
+- Tabellen können jetzt auch ältere/anders strukturierte Einträge mit `teams` als Objekt lesen.
+- Gespeicherte und vorbereitete Einträge werden in der Liste klar unterschieden.
