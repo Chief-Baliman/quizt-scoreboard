@@ -1,4 +1,4 @@
-# Quizt Scoreboard v41
+# Quizt Scoreboard v42
 
 Responsive Punkteübersicht für Quizt Events mit Firebase Realtime Database und GitHub Pages.
 
@@ -113,3 +113,13 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
 - Der alte Prüflistenbereich unten im Liga-Admin wurde entfernt, damit der Klick nicht mehr „unsichtbar“ wirkt.
 - Nach Klick auf „Dieses Event in Liga übernehmen“ wird direkt zur Prüfliste im Event gescrollt.
 - Zusätzlich erscheint eine sichtbare Meldung im Event-Editor.
+
+
+## Änderungen in v42
+
+- Liga-Übernahme-Button hat jetzt drei Fallbacks:
+  - normaler EventListener
+  - globaler Inline-Fallback
+  - dokumentweiter Klick-Fallback
+- Beim Klick erscheint sofort eine sichtbare Meldung „Liga-Übernahme wird vorbereitet ...“.
+- Fehler werden sichtbar im Editor ausgegeben, statt scheinbar nichts zu tun.

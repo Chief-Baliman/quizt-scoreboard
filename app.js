@@ -1324,6 +1324,9 @@ function updateLeagueActiveEventHint() {
 
 
 function prepareLeagueImport() {
+  if (dom.editorMessage) showMessage(dom.editorMessage, "Liga-Übernahme wird vorbereitet ...");
+  if (dom.leagueMessage) showMessage(dom.leagueMessage, "Liga-Übernahme wird vorbereitet ...");
+
   if (!activeDraft) {
     showMessage(dom.editorMessage, "Bitte links zuerst ein Event öffnen.", "error");
     showMessage(dom.leagueMessage, "Bitte links zuerst ein Event öffnen. Das geöffnete Event ist das Event, das übernommen wird.", "error");
@@ -1369,6 +1372,23 @@ function prepareLeagueImport() {
     existing ? "error" : "success"
   );
 }
+
+function runLeagueImportFromButton(event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+
+  try {
+    prepareLeagueImport();
+  } catch (error) {
+    const message = `Liga-Übernahme konnte nicht vorbereitet werden: ${error.message}`;
+    if (dom.editorMessage) showMessage(dom.editorMessage, message, "error");
+    if (dom.leagueMessage) showMessage(dom.leagueMessage, message, "error");
+    console.error(error);
+  }
+}
+
+window.quiztPrepareLeagueImport = runLeagueImportFromButton;
+
 
 function renderLeagueImportRows() {
   if (!pendingLeagueImport || !dom.leagueImportRows) return;
@@ -1567,8 +1587,8 @@ dom.adminToggleBtn.addEventListener("click", () => dom.adminPanel.classList.togg
     renderPublicLeague();
   });
   dom.saveLeagueSettingsBtn?.addEventListener("click", saveLeagueSettings);
-  dom.prepareLeagueImportBtn?.addEventListener("click", prepareLeagueImport);
-  dom.prepareLeagueImportEditorBtn?.addEventListener("click", prepareLeagueImport);
+  dom.prepareLeagueImportBtn?.addEventListener("click", runLeagueImportFromButton);
+  dom.prepareLeagueImportEditorBtn?.addEventListener("click", runLeagueImportFromButton);
   dom.cancelLeagueImportBtn?.addEventListener("click", () => {
     pendingLeagueImport = null;
     dom.leagueImportBox?.classList.add("hidden");
@@ -1577,6 +1597,12 @@ dom.adminToggleBtn.addEventListener("click", () => dom.adminPanel.classList.togg
   });
   dom.saveLeagueImportBtn?.addEventListener("click", saveLeagueImport);
   dom.addManualLeagueEntryBtn?.addEventListener("click", addManualLeagueEntry);
+
+  document.addEventListener("click", (event) => {
+    const target = event.target?.closest?.("#prepareLeagueImportBtn, #prepareLeagueImportEditorBtn");
+    if (!target) return;
+    runLeagueImportFromButton(event);
+  });
 }
 
 function initAuth() {
