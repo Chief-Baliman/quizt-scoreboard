@@ -6,7 +6,7 @@
   <title>Quizt Punkteübersicht</title>
   <meta name="description" content="Digitale Punkteübersicht für Quizt Veranstaltungen." />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=36" />
+  <link rel="stylesheet" href="./styles.css?v=37" />
   <script>
     window.QUIZT_MOD_REDIRECT_V31 = true;
     const __quiztMod = new URLSearchParams(location.search).get("mod") || new URLSearchParams(location.search).get("moderator");
@@ -138,7 +138,7 @@
           <div class="section-title-row">
             <div>
               <h3>Quizt Liga verwalten</h3>
-              <p class="muted small-note">Quartalsranking und All-Time-Ranking. Event-Ergebnisse werden erst nach deiner Bestätigung übernommen.</p>
+              <p class="muted small-note">Quartalsranking und All-Time-Ranking. Ein geöffnetes Event kann nach Prüfung ins Liga-Ranking übernommen oder erneut überschrieben werden.</p>
             </div>
           </div>
 
@@ -161,8 +161,9 @@
 
           <div class="league-admin-actions">
             <button id="saveLeagueSettingsBtn" class="ghost-btn" type="button">Liga-Einstellungen speichern</button>
-            <button id="prepareLeagueImportBtn" class="primary-btn" type="button">Aktives Event ins Liga-Ranking übernehmen</button>
+            <button id="prepareLeagueImportBtn" class="primary-btn" type="button">Geöffnetes Event ins Liga-Ranking übernehmen</button>
           </div>
+          <p id="leagueActiveEventHint" class="small-note muted">Kein Event geöffnet.</p>
           <p id="leagueMessage" class="message"></p>
 
           <div id="leagueImportBox" class="league-import-box hidden">
@@ -352,7 +353,7 @@
           <div class="section-title-row">
             <div>
               <h3>Quizt Liga verwalten</h3>
-              <p class="muted small-note">Quartalsranking und All-Time-Ranking. Event-Ergebnisse werden erst nach deiner Bestätigung übernommen.</p>
+              <p class="muted small-note">Quartalsranking und All-Time-Ranking. Ein geöffnetes Event kann nach Prüfung ins Liga-Ranking übernommen oder erneut überschrieben werden.</p>
             </div>
           </div>
 
@@ -375,8 +376,9 @@
 
           <div class="league-admin-actions">
             <button id="saveLeagueSettingsBtn" class="ghost-btn" type="button">Liga-Einstellungen speichern</button>
-            <button id="prepareLeagueImportBtn" class="primary-btn" type="button">Aktives Event ins Liga-Ranking übernehmen</button>
+            <button id="prepareLeagueImportBtn" class="primary-btn" type="button">Geöffnetes Event ins Liga-Ranking übernehmen</button>
           </div>
+          <p id="leagueActiveEventHint" class="small-note muted">Kein Event geöffnet.</p>
           <p id="leagueMessage" class="message"></p>
 
           <div id="leagueImportBox" class="league-import-box hidden">
@@ -431,6 +433,6 @@
     <button id="adminToggleBtn" class="admin-footer-btn" type="button">Admin</button>
   </footer>
 
-  <script type="module" src="./app.js?v=36"></script>
+  <script type="module" src="./app.js?v=37"></script>
 </body>
 </html>

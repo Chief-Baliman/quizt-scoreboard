@@ -97,6 +97,7 @@ const dom = {
   leagueShowHomeInput: $("#leagueShowHomeInput"),
   saveLeagueSettingsBtn: $("#saveLeagueSettingsBtn"),
   prepareLeagueImportBtn: $("#prepareLeagueImportBtn"),
+  leagueActiveEventHint: $("#leagueActiveEventHint"),
   leagueMessage: $("#leagueMessage"),
   leagueImportBox: $("#leagueImportBox"),
   leagueImportRows: $("#leagueImportRows"),
@@ -778,6 +779,7 @@ function selectAdminEvent(eventId) {
   activeDraft = normalizeEvent(structuredClone(event));
   renderAdminEventList();
   renderEditor();
+  updateLeagueActiveEventHint();
 }
 
 function ensureScoresForTeams(event) {
@@ -901,6 +903,7 @@ function renderEditor() {
   renderTeamEditor();
   renderScoreBlocks();
   renderAdminPreview();
+  updateLeagueActiveEventHint();
   showMessage(dom.editorMessage, "");
 }
 
@@ -1238,6 +1241,8 @@ function renderAdminLeague() {
   renderLeagueList(dom.adminLeagueQuarter, tables.quarter);
   renderLeagueList(dom.adminLeagueAllTime, tables.allTime);
 
+  updateLeagueActiveEventHint();
+
   const results = Object.values(leagueResults || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
   if (!dom.leagueResultsList) return;
@@ -1290,9 +1295,37 @@ function stopLeagueListener() {
   unsubscribeLeague = null;
 }
 
+function getLeagueEventEntryId(eventId) {
+  return `event_${eventId}`;
+}
+
+function getExistingLeagueEntryForEvent(eventId) {
+  if (!eventId) return null;
+  return leagueResults?.[getLeagueEventEntryId(eventId)] || null;
+}
+
+function updateLeagueActiveEventHint() {
+  if (!dom.leagueActiveEventHint) return;
+
+  if (!activeDraft) {
+    dom.leagueActiveEventHint.textContent = "Kein Event geöffnet. Öffne links zuerst ein Event, das du übernehmen möchtest.";
+    dom.prepareLeagueImportBtn?.setAttribute("disabled", "disabled");
+    return;
+  }
+
+  const existing = getExistingLeagueEntryForEvent(activeDraft.id);
+  const label = existing
+    ? `Bereits übernommen am ${formatDate(existing.createdAt)}. Erneute Übernahme überschreibt den vorhandenen Liga-Eintrag.`
+    : "Noch nicht ins Liga-Ranking übernommen.";
+
+  dom.leagueActiveEventHint.textContent = `Geöffnetes Event: ${activeDraft.title || "Quizt Event"} · Code ${activeDraft.code || "----"} · ${label}`;
+  dom.prepareLeagueImportBtn?.removeAttribute("disabled");
+}
+
+
 function prepareLeagueImport() {
   if (!activeDraft) {
-    showMessage(dom.leagueMessage, "Bitte zuerst ein Event öffnen.", "error");
+    showMessage(dom.leagueMessage, "Bitte links zuerst ein Event öffnen. Das geöffnete Event ist das Event, das übernommen wird.", "error");
     return;
   }
 
@@ -1303,29 +1336,45 @@ function prepareLeagueImport() {
     return;
   }
 
+  const existing = getExistingLeagueEntryForEvent(event.id);
+
   pendingLeagueImport = {
     id: event.id,
     title: event.title || "Quizt Event",
     code: event.code || "",
     quarter: getQuarterKey(new Date(event.updatedAt || Date.now())),
-    teams: ranking.map((team, index) => ({
-      originalName: team.name,
-      name: team.name,
-      place: index + 1,
-      score: team.total,
-      points: getLeaguePoints(index + 1)
-    }))
+    overwritesExisting: Boolean(existing),
+    teams: ranking.map((team, index) => {
+      const existingTeam = existing?.teams?.find((row) => row.place === index + 1 || normalizeLeagueTeamName(row.name) === normalizeLeagueTeamName(team.name));
+      return {
+        originalName: team.name,
+        name: existingTeam?.name || team.name,
+        place: index + 1,
+        score: team.total,
+        points: existingTeam ? scoreNumber(existingTeam.points) : getLeaguePoints(index + 1)
+      };
+    })
   };
 
   dom.leagueImportBox?.classList.remove("hidden");
   renderLeagueImportRows();
-  showMessage(dom.leagueMessage, "Bitte Teamnamen und Liga-Punkte prüfen.", "success");
+  showMessage(
+    dom.leagueMessage,
+    existing
+      ? "Dieses Event war bereits übernommen. Wenn du jetzt speicherst, wird der vorhandene Liga-Eintrag überschrieben."
+      : "Bitte Teamnamen und Liga-Punkte prüfen.",
+    existing ? "error" : "success"
+  );
 }
 
 function renderLeagueImportRows() {
   if (!pendingLeagueImport || !dom.leagueImportRows) return;
 
-  dom.leagueImportRows.innerHTML = pendingLeagueImport.teams.map((team, index) => `
+  const overwriteNotice = pendingLeagueImport.overwritesExisting
+    ? `<div class="league-overwrite-warning">Dieses Event ist bereits im Liga-Ranking. Speichern überschreibt den vorhandenen Eintrag.</div>`
+    : "";
+
+  dom.leagueImportRows.innerHTML = overwriteNotice + pendingLeagueImport.teams.map((team, index) => `
     <div class="league-import-row">
       <span class="league-place">${team.place}.</span>
       <div>
@@ -1365,6 +1414,7 @@ async function saveLeagueImport() {
     title: pendingLeagueImport.title,
     quarter: pendingLeagueImport.quarter,
     createdAt: Date.now(),
+    updatedAt: Date.now(),
     teams: pendingLeagueImport.teams.map((team) => ({
       name: normalizeLeagueTeamName(team.name),
       place: team.place,
@@ -1376,7 +1426,8 @@ async function saveLeagueImport() {
   await set(ref(db, `${ROOT_PATH}/league/results/${entry.id}`), entry);
   pendingLeagueImport = null;
   dom.leagueImportBox?.classList.add("hidden");
-  showMessage(dom.leagueMessage, "Event wurde ins Liga-Ranking übernommen.", "success");
+  updateLeagueActiveEventHint();
+  showMessage(dom.leagueMessage, "Event wurde ins Liga-Ranking übernommen beziehungsweise aktualisiert.", "success");
 }
 
 async function saveLeagueSettings() {
