@@ -3315,29 +3315,17 @@ select {
 }
 
 
-/* V38: explizite Event-Auswahl für Liga-Übernahme */
-.league-event-picker {
-  margin-top: 16px;
-  padding: 14px;
-  border-radius: 18px;
-  border: 1px solid rgba(40, 230, 255, 0.16);
-  background: rgba(40, 230, 255, 0.06);
+/* V40: Liga-Übernahme direkt am geöffneten Event */
+.league-editor-btn {
+  border-color: rgba(255, 216, 74, 0.36);
+  color: var(--yellow);
 }
 
-.league-event-picker label {
-  display: grid;
-  gap: 8px;
-  font-weight: 900;
+.league-editor-btn:hover {
+  background: rgba(255, 216, 74, 0.10);
 }
 
-.league-event-picker select {
-  width: 100%;
-  min-height: 52px;
-  border-radius: 16px;
-  border: 1px solid rgba(40, 230, 255, 0.24);
-  background: rgba(2, 7, 15, 0.92);
-  color: var(--text);
-  padding: 0 14px;
-  font-size: 1rem;
-  font-weight: 900;
+#prepareLeagueImportBtn:disabled {
+  opacity: 1;
+  cursor: pointer;
 }

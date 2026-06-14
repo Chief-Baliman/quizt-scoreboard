@@ -97,7 +97,7 @@ const dom = {
   leagueShowHomeInput: $("#leagueShowHomeInput"),
   saveLeagueSettingsBtn: $("#saveLeagueSettingsBtn"),
   prepareLeagueImportBtn: $("#prepareLeagueImportBtn"),
-  leagueEventSelect: $("#leagueEventSelect"),
+  prepareLeagueImportEditorBtn: $("#prepareLeagueImportEditorBtn"),
   leagueActiveEventHint: $("#leagueActiveEventHint"),
   leagueMessage: $("#leagueMessage"),
   leagueImportBox: $("#leagueImportBox"),
@@ -777,12 +777,10 @@ function selectAdminEvent(eventId) {
   const event = adminEvents[eventId];
   if (!event) return;
   activeEventId = eventId;
-  selectedLeagueEventId = eventId;
   activeDraft = normalizeEvent(structuredClone(event));
   renderAdminEventList();
   renderEditor();
-  renderLeagueEventPicker();
-  dom.editorCard?.scrollIntoView({ behavior: "smooth", block: "start" });
+  updateLeagueActiveEventHint();
 }
 
 function ensureScoresForTeams(event) {
@@ -1141,7 +1139,6 @@ function startAdminListener() {
   unsubscribeAdminEvents = onValue(adminRef, (snapshot) => {
     adminEvents = snapshot.val() || {};
     renderAdminEventList();
-    renderLeagueEventPicker();
 
     if (activeEventId && adminEvents[activeEventId]) {
       activeDraft = normalizeEvent(structuredClone(adminEvents[activeEventId]));
@@ -1245,7 +1242,7 @@ function renderAdminLeague() {
   renderLeagueList(dom.adminLeagueQuarter, tables.quarter);
   renderLeagueList(dom.adminLeagueAllTime, tables.allTime);
 
-  renderLeagueEventPicker();
+  updateLeagueActiveEventHint();
 
   const results = Object.values(leagueResults || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
@@ -1308,74 +1305,31 @@ function getExistingLeagueEntryForEvent(eventId) {
   return leagueResults?.[getLeagueEventEntryId(eventId)] || null;
 }
 
-function getSelectedLeagueEvent() {
-  const eventId = dom.leagueEventSelect?.value || selectedLeagueEventId || activeEventId;
-  if (eventId && adminEvents?.[eventId]) return normalizeEvent(structuredClone(adminEvents[eventId]));
-  if (activeDraft?.id) return normalizeEvent(structuredClone(activeDraft));
-
-  const firstEvent = Object.values(adminEvents || {})[0];
-  return firstEvent ? normalizeEvent(structuredClone(firstEvent)) : null;
-}
-
-function renderLeagueEventPicker() {
-  if (!dom.leagueEventSelect) return;
-
-  const events = Object.values(adminEvents || {})
-    .map(normalizeEvent)
-    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
-  if (!events.length) {
-    if (activeDraft?.id) {
-      dom.leagueEventSelect.innerHTML = `<option value="${escapeHtml(activeDraft.id)}">${escapeHtml(activeDraft.title || "Quizt Event")} · Code ${escapeHtml(activeDraft.code || "----")}</option>`;
-      selectedLeagueEventId = activeDraft.id;
-      dom.leagueEventSelect.value = activeDraft.id;
-    } else {
-      dom.leagueEventSelect.innerHTML = `<option value="">Noch keine Events vorhanden</option>`;
-      selectedLeagueEventId = "";
-    }
-    updateLeagueActiveEventHint();
-    return;
-  }
-
-  const wantedId = selectedLeagueEventId || activeEventId || events[0].id;
-  const selectedExists = events.some((event) => event.id === wantedId);
-  selectedLeagueEventId = selectedExists ? wantedId : events[0].id;
-
-  dom.leagueEventSelect.innerHTML = events.map((event) => `
-    <option value="${escapeHtml(event.id)}">${escapeHtml(event.title || "Quizt Event")} · Code ${escapeHtml(event.code || "----")}${event.finished ? " · beendet" : ""}</option>
-  `).join("");
-
-  dom.leagueEventSelect.value = selectedLeagueEventId;
-  updateLeagueActiveEventHint();
-}
-
 function updateLeagueActiveEventHint() {
   if (!dom.leagueActiveEventHint) return;
 
-  const event = getSelectedLeagueEvent();
-  if (!event) {
-    dom.leagueActiveEventHint.textContent = "Kein Event ausgewählt. Lege zuerst ein Event an oder wähle ein vorhandenes Event aus.";
+  if (!activeDraft) {
+    dom.leagueActiveEventHint.textContent = "Kein Event geöffnet. Öffne links zuerst ein Event, das du übernehmen möchtest.";
     return;
   }
 
-  const existing = getExistingLeagueEntryForEvent(event.id);
+  const existing = getExistingLeagueEntryForEvent(activeDraft.id);
   const label = existing
     ? `Bereits übernommen am ${formatDate(existing.createdAt)}. Erneute Übernahme überschreibt den vorhandenen Liga-Eintrag.`
     : "Noch nicht ins Liga-Ranking übernommen.";
 
-  dom.leagueActiveEventHint.textContent = `Ausgewählt: ${event.title || "Quizt Event"} · Code ${event.code || "----"} · ${label}`;
+  dom.leagueActiveEventHint.textContent = `Geöffnetes Event: ${activeDraft.title || "Quizt Event"} · Code ${activeDraft.code || "----"} · ${label}`;
+
 }
 
 
 function prepareLeagueImport() {
-  const selectedEvent = getSelectedLeagueEvent();
-
-  if (!selectedEvent) {
-    showMessage(dom.leagueMessage, "Bitte zuerst ein Event im Liga-Bereich auswählen.", "error");
+  if (!activeDraft) {
+    showMessage(dom.leagueMessage, "Bitte links zuerst ein Event öffnen. Das geöffnete Event ist das Event, das übernommen wird.", "error");
     return;
   }
 
-  const event = normalizeEvent(structuredClone(selectedEvent));
+  const event = normalizeEvent(structuredClone(activeDraft));
   const ranking = calculateRanking(event);
   if (!ranking.length) {
     showMessage(dom.leagueMessage, "Dieses Event hat noch keine Teams.", "error");
@@ -1405,7 +1359,6 @@ function prepareLeagueImport() {
   dom.leagueImportBox?.classList.remove("hidden");
   renderLeagueImportRows();
   dom.leagueImportBox?.scrollIntoView({ behavior: "smooth", block: "start" });
-
   showMessage(
     dom.leagueMessage,
     existing
@@ -1414,7 +1367,6 @@ function prepareLeagueImport() {
     existing ? "error" : "success"
   );
 }
-
 
 function renderLeagueImportRows() {
   if (!pendingLeagueImport || !dom.leagueImportRows) return;
@@ -1613,11 +1565,8 @@ dom.adminToggleBtn.addEventListener("click", () => dom.adminPanel.classList.togg
     renderPublicLeague();
   });
   dom.saveLeagueSettingsBtn?.addEventListener("click", saveLeagueSettings);
-  dom.leagueEventSelect?.addEventListener("change", () => {
-    selectedLeagueEventId = dom.leagueEventSelect.value;
-    updateLeagueActiveEventHint();
-  });
   dom.prepareLeagueImportBtn?.addEventListener("click", prepareLeagueImport);
+  dom.prepareLeagueImportEditorBtn?.addEventListener("click", prepareLeagueImport);
   dom.cancelLeagueImportBtn?.addEventListener("click", () => {
     pendingLeagueImport = null;
     dom.leagueImportBox?.classList.add("hidden");

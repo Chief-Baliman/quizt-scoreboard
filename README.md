@@ -1,4 +1,4 @@
-# Quizt Scoreboard v39
+# Quizt Scoreboard v40
 
 Responsive Punkteübersicht für Quizt Events mit Firebase Realtime Database und GitHub Pages.
 
@@ -96,18 +96,12 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
 - Beim Prüfen der Übernahme erscheint eine Warnung, wenn der Eintrag überschrieben wird.
 
 
-## Änderungen in v38
+## Änderungen in v40
 
-- Liga-Übernahme nutzt jetzt eine explizite Event-Auswahl.
-- Der Button bezieht sich nicht mehr unklar auf ein „aktives“ oder „geöffnetes“ Event.
-- Du wählst im Liga-Bereich das Event aus und klickst dann „Ausgewähltes Event ins Liga-Ranking übernehmen“.
-- Bereits übernommene Events werden weiterhin erkannt und beim erneuten Speichern überschrieben statt doppelt gezählt.
-- Nach Klick auf den Button scrollt die Seite direkt zur Prüfliste.
-
-
-## Änderungen in v39
-
-- Liga-Event-Dropdown wird jetzt aktualisiert, sobald die Admin-Events geladen sind.
-- Event-Auswahl im Liga-Bereich ist nicht mehr leer, obwohl Events vorhanden sind.
-- Beim Klick auf ein Event wird der Editor zusätzlich in den sichtbaren Bereich gescrollt.
-- Die Liga-Übernahme hat einen Fallback auf das erste vorhandene Event, falls noch kein Dropdown-Wert gesetzt ist.
+- Rollback auf die stabile Event-Öffnen-Logik aus v37.
+- Die explizite Event-Dropdown-Auswahl aus v38/v39 wurde entfernt, weil sie die Event-Bearbeitung gestört hat.
+- Zusätzlich gibt es jetzt direkt in der geöffneten Event-Bearbeitung den Button:
+  `Dieses Event in Liga übernehmen`
+- Der Liga-Button im Liga-Bereich nutzt weiterhin das aktuell geöffnete Event.
+- Wenn kein Event geöffnet ist, erscheint eine Meldung statt eines scheinbar wirkungslosen Klicks.
+- Nach Klick auf die Übernahme wird automatisch zur Prüfliste gescrollt.
