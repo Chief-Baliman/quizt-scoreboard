@@ -1,4 +1,4 @@
-# Quizt Scoreboard v35
+# Quizt Scoreboard v36 Liga Stabil
 
 Responsive Punkteübersicht für Quizt Events mit Firebase Realtime Database und GitHub Pages.
 
@@ -64,3 +64,23 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
 - Runden-Tabelle im Moderator-View wurde technisch neu als echter horizontaler Scroll-Container aufgebaut.
 - Scroll liegt jetzt auf einem eigenen äußeren Container, nicht mehr auf der Tabelle selbst.
 - Parent-Container blockieren das seitliche Scrollen nicht mehr.
+
+
+## Änderungen: Liga stabil integriert
+
+Basis: bestätigter stabiler Stand v35.
+
+Neu:
+- Liga-Admin-Bereich ergänzt.
+- Getestete Liga-Logik aus `liga-test.html` integriert.
+- Event kann direkt aus dem geöffneten Editor in die Liga übernommen werden.
+- Speichert unter `quiztScoreboard/league/results`.
+- Quartalsranking und All-Time-Ranking werden im Admin angezeigt.
+- Öffentliche Liga-Anzeige auf der Code-Seite kann per Checkbox aktiviert werden.
+- Manuelle Korrekturen sind möglich.
+- Moderator-View wurde nicht verändert.
+- `moderator.html` wurde nicht verändert.
+- Keine Zusatzdateien.
+
+Wichtig:
+Firebase Rules müssen den Pfad `quiztScoreboard/league` enthalten.

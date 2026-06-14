@@ -15,6 +15,7 @@ const firebaseConfig = {
 
 const ADMIN_UID = "FMZW16NbeQXPKmVE50BcnbRYI2o1";
 const ROOT_PATH = "quiztScoreboard";
+const LEAGUE_POINTS = [20, 16, 12, 9, 6, 4, 2];
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -87,7 +88,29 @@ const dom = {
   addRoundBtn: $("#addRoundBtn"),
   saveDraftBtn: $("#saveDraftBtn"),
   publishBtn: $("#publishBtn"),
-  editorMessage: $("#editorMessage")
+  editorMessage: $("#editorMessage"),
+  prepareLeagueImportEditorBtn: $("#prepareLeagueImportEditorBtn"),
+  leagueImportBox: $("#leagueImportBox"),
+  leagueImportRows: $("#leagueImportRows"),
+  cancelLeagueImportBtn: $("#cancelLeagueImportBtn"),
+  saveLeagueImportBtn: $("#saveLeagueImportBtn"),
+  publicLeagueBox: $("#publicLeagueBox"),
+  publicLeagueList: $("#publicLeagueList"),
+  publicLeagueQuarterBtn: $("#publicLeagueQuarterBtn"),
+  publicLeagueAllTimeBtn: $("#publicLeagueAllTimeBtn"),
+  leagueEnabledInput: $("#leagueEnabledInput"),
+  leagueShowHomeInput: $("#leagueShowHomeInput"),
+  saveLeagueSettingsBtn: $("#saveLeagueSettingsBtn"),
+  checkLeagueFirebaseBtn: $("#checkLeagueFirebaseBtn"),
+  leagueMessage: $("#leagueMessage"),
+  leagueStatusBox: $("#leagueStatusBox"),
+  manualLeagueTeamInput: $("#manualLeagueTeamInput"),
+  manualLeaguePointsInput: $("#manualLeaguePointsInput"),
+  manualLeagueNoteInput: $("#manualLeagueNoteInput"),
+  addManualLeagueEntryBtn: $("#addManualLeagueEntryBtn"),
+  adminLeagueQuarter: $("#adminLeagueQuarter"),
+  adminLeagueAllTime: $("#adminLeagueAllTime"),
+  leagueResultsList: $("#leagueResultsList")
 };
 
 let currentUser = null;
@@ -95,8 +118,13 @@ let adminEvents = {};
 let activeEventId = null;
 let activeDraft = null;
 let unsubscribeAdminEvents = null;
+let unsubscribeLeague = null;
 let pendingPrivateCode = "";
 let currentPublicEvent = null;
+let leagueSettings = { enabled: false, showOnHome: false };
+let leagueResults = {};
+let pendingLeagueImport = null;
+let publicLeagueMode = "quarter";
 
 
 function setupBrandLogo() {
@@ -1108,6 +1136,328 @@ async function createNewEvent() {
   }
 }
 
+
+function getLeaguePoints(place) {
+  return LEAGUE_POINTS[place - 1] ?? 1;
+}
+
+function getQuarterKey(date = new Date()) {
+  return `${date.getFullYear()}-Q${Math.floor(date.getMonth() / 3) + 1}`;
+}
+
+function normalizeLeagueResults(value) {
+  if (!value) return {};
+  if (Array.isArray(value)) {
+    return Object.fromEntries(value.filter(Boolean).map((entry, index) => [entry.id || `legacy_${index}`, entry]));
+  }
+  return value;
+}
+
+function normalizeLeagueTeams(entry) {
+  if (Array.isArray(entry?.teams)) return entry.teams;
+  if (entry?.teams && typeof entry.teams === "object") return Object.values(entry.teams);
+  return [];
+}
+
+function normalizeLeagueTeamName(name = "") {
+  return String(name || "").trim().replace(/\s+/g, " ") || "Unbenanntes Team";
+}
+
+function leagueEntryId(eventId) {
+  return `event_${eventId}`;
+}
+
+function getExistingLeagueEntry(eventId) {
+  if (!eventId) return null;
+  return leagueResults?.[leagueEntryId(eventId)] || null;
+}
+
+function buildLeagueEntryFromDraft() {
+  if (!activeDraft) return null;
+  const event = normalizeEvent(structuredClone(activeDraft));
+  const ranking = calculateRanking(event);
+  if (!ranking.length) return null;
+
+  const existing = getExistingLeagueEntry(event.id);
+  const now = Date.now();
+
+  const teams = ranking.map((team, index) => {
+    const place = index + 1;
+    const oldTeam = existing ? normalizeLeagueTeams(existing).find((entry) => entry.place === place || normalizeLeagueTeamName(entry.name) === normalizeLeagueTeamName(team.name)) : null;
+    return {
+      originalName: team.name || `Team ${place}`,
+      name: oldTeam?.name || team.name || `Team ${place}`,
+      place,
+      quizPoints: team.total,
+      points: oldTeam ? scoreNumber(oldTeam.points) : getLeaguePoints(place)
+    };
+  });
+
+  return {
+    id: leagueEntryId(event.id),
+    type: "event",
+    eventId: event.id,
+    code: event.code || "",
+    title: event.title || "Quizt Event",
+    quarter: getQuarterKey(new Date(event.updatedAt || now)),
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+    teams
+  };
+}
+
+function calculateLeagueTables() {
+  const quarterKey = getQuarterKey();
+  const quarter = new Map();
+  const allTime = new Map();
+
+  Object.values(leagueResults || {}).forEach((entry) => {
+    if (!entry || entry.deleted) return;
+    normalizeLeagueTeams(entry).forEach((team) => {
+      const name = normalizeLeagueTeamName(team.name);
+      const points = scoreNumber(team.points);
+      if (!name || !points) return;
+
+      const allRow = allTime.get(name) || { name, points: 0, events: 0 };
+      allRow.points += points;
+      allRow.events += 1;
+      allTime.set(name, allRow);
+
+      if ((entry.quarter || "") === quarterKey) {
+        const qRow = quarter.get(name) || { name, points: 0, events: 0 };
+        qRow.points += points;
+        qRow.events += 1;
+        quarter.set(name, qRow);
+      }
+    });
+  });
+
+  const sortRows = (rows) => [...rows.values()].sort((a, b) => b.points - a.points || a.name.localeCompare(b.name, "de"));
+  return { quarter: sortRows(quarter), allTime: sortRows(allTime), quarterKey };
+}
+
+function renderLeagueList(target, rows, emptyText = "Noch keine Liga-Einträge.") {
+  if (!target) return;
+  if (!rows.length) {
+    target.innerHTML = `<p class="muted">${emptyText}</p>`;
+    return;
+  }
+
+  target.innerHTML = rows.slice(0, 20).map((row, index) => `
+    <article class="league-row">
+      <span>${index + 1}.</span>
+      <strong>${escapeHtml(row.name)}</strong>
+      <b>${row.points}</b>
+      <small>${row.events} ${row.events === 1 ? "Eintrag" : "Einträge"}</small>
+    </article>
+  `).join("");
+}
+
+function renderPublicLeague() {
+  if (!dom.publicLeagueBox || !dom.publicLeagueList) return;
+  const visible = Boolean(leagueSettings.enabled && leagueSettings.showOnHome);
+  dom.publicLeagueBox.classList.toggle("hidden", !visible);
+  if (!visible) return;
+
+  const tables = calculateLeagueTables();
+  const rows = publicLeagueMode === "allTime" ? tables.allTime : tables.quarter;
+  renderLeagueList(dom.publicLeagueList, rows, "Noch keine Liga-Wertung veröffentlicht.");
+  dom.publicLeagueQuarterBtn?.classList.toggle("active", publicLeagueMode === "quarter");
+  dom.publicLeagueAllTimeBtn?.classList.toggle("active", publicLeagueMode === "allTime");
+}
+
+function renderAdminLeague() {
+  if (dom.leagueEnabledInput) dom.leagueEnabledInput.checked = Boolean(leagueSettings.enabled);
+  if (dom.leagueShowHomeInput) dom.leagueShowHomeInput.checked = Boolean(leagueSettings.showOnHome);
+
+  const tables = calculateLeagueTables();
+  renderLeagueList(dom.adminLeagueQuarter, tables.quarter, "Noch keine Punkte im aktuellen Quartal.");
+  renderLeagueList(dom.adminLeagueAllTime, tables.allTime, "Noch keine All-Time-Punkte.");
+
+  const results = Object.values(leagueResults || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  if (dom.leagueStatusBox) {
+    dom.leagueStatusBox.textContent = `Liga geladen · ${results.length} gespeicherte Einträge · aktuelles Quartal: ${tables.quarterKey}`;
+  }
+
+  if (dom.leagueResultsList) {
+    dom.leagueResultsList.innerHTML = results.length ? results.slice(0, 30).map((entry) => `
+      <article class="league-result-item">
+        <div>
+          <strong>${escapeHtml(entry.title || "Liga-Eintrag")}</strong>
+          <small>${escapeHtml(entry.quarter || "")} · ${formatDate(entry.createdAt)} · ${entry.type === "manual" ? "Manuell" : "Event"}</small>
+          <span>${normalizeLeagueTeams(entry).map((team) => `${escapeHtml(team.name)}: ${scoreNumber(team.points)}`).join(" · ")}</span>
+        </div>
+        <button class="tiny-btn danger" type="button" data-delete-league-result="${escapeHtml(entry.id)}">Löschen</button>
+      </article>
+    `).join("") : "<p class='muted'>Noch keine gespeicherten Liga-Einträge.</p>";
+
+    dom.leagueResultsList.querySelectorAll("[data-delete-league-result]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        if (!requireAdmin()) return;
+        const id = button.dataset.deleteLeagueResult;
+        await remove(ref(db, `${ROOT_PATH}/league/results/${id}`));
+        showMessage(dom.leagueMessage, "Liga-Eintrag gelöscht.", "success");
+      });
+    });
+  }
+
+  renderPublicLeague();
+}
+
+function startLeagueListener() {
+  if (unsubscribeLeague) unsubscribeLeague();
+  unsubscribeLeague = onValue(ref(db, `${ROOT_PATH}/league`), (snapshot) => {
+    const value = snapshot.val() || {};
+    leagueSettings = {
+      enabled: Boolean(value.settings?.enabled),
+      showOnHome: Boolean(value.settings?.showOnHome)
+    };
+    leagueResults = normalizeLeagueResults(value.results);
+    renderAdminLeague();
+    renderPublicLeague();
+  }, (error) => {
+    showMessage(dom.leagueMessage, `Firebase-Liga konnte nicht gelesen werden: ${error.message}`, "error");
+    if (dom.leagueStatusBox) dom.leagueStatusBox.textContent = `Firebase-Fehler: ${error.message}`;
+  });
+}
+
+function stopLeagueListener() {
+  if (unsubscribeLeague) unsubscribeLeague();
+  unsubscribeLeague = null;
+  leagueSettings = { enabled: false, showOnHome: false };
+  leagueResults = {};
+  pendingLeagueImport = null;
+}
+
+function prepareLeagueImport() {
+  if (!activeDraft) {
+    showMessage(dom.editorMessage, "Bitte zuerst ein Event öffnen.", "error");
+    return;
+  }
+
+  const entry = buildLeagueEntryFromDraft();
+  if (!entry) {
+    showMessage(dom.editorMessage, "Dieses Event hat noch keine Teams.", "error");
+    return;
+  }
+
+  pendingLeagueImport = entry;
+  if (dom.leagueImportBox) dom.leagueImportBox.classList.remove("hidden");
+  renderLeagueImportRows();
+  dom.leagueImportBox?.scrollIntoView({ behavior: "smooth", block: "center" });
+  showMessage(dom.editorMessage, getExistingLeagueEntry(activeDraft.id) ? "Liga-Übernahme vorbereitet. Speichern überschreibt den vorhandenen Eintrag." : "Liga-Übernahme vorbereitet.", "success");
+}
+
+function renderLeagueImportRows() {
+  if (!pendingLeagueImport || !dom.leagueImportRows) return;
+  const existing = getExistingLeagueEntry(pendingLeagueImport.eventId);
+  const warning = existing ? "<div class='league-overwrite-warning'>Dieses Event ist bereits im Liga-Ranking. Speichern überschreibt den vorhandenen Eintrag.</div>" : "";
+
+  dom.leagueImportRows.innerHTML = warning + pendingLeagueImport.teams.map((team, index) => `
+    <div class="league-import-row">
+      <span class="league-place">${team.place}.</span>
+      <div>
+        <strong>${escapeHtml(team.originalName)}</strong>
+        <small>${team.quizPoints} Quizpunkte</small>
+      </div>
+      <label>Liga-Team
+        <input type="text" value="${escapeHtml(team.name)}" data-league-team-name="${index}" />
+      </label>
+      <label>Punkte
+        <input type="number" step="1" value="${scoreNumber(team.points)}" data-league-team-points="${index}" />
+      </label>
+    </div>
+  `).join("");
+
+  dom.leagueImportRows.querySelectorAll("[data-league-team-name]").forEach((input) => {
+    input.addEventListener("input", () => {
+      pendingLeagueImport.teams[Number(input.dataset.leagueTeamName)].name = input.value;
+    });
+  });
+
+  dom.leagueImportRows.querySelectorAll("[data-league-team-points]").forEach((input) => {
+    input.addEventListener("input", () => {
+      pendingLeagueImport.teams[Number(input.dataset.leagueTeamPoints)].points = scoreNumber(input.value);
+    });
+  });
+}
+
+async function saveLeagueImport() {
+  if (!requireAdmin() || !pendingLeagueImport) return;
+
+  const now = Date.now();
+  const entry = {
+    ...pendingLeagueImport,
+    createdAt: getExistingLeagueEntry(pendingLeagueImport.eventId)?.createdAt || pendingLeagueImport.createdAt || now,
+    updatedAt: now,
+    teams: pendingLeagueImport.teams.map((team) => ({
+      name: normalizeLeagueTeamName(team.name),
+      place: team.place,
+      quizPoints: scoreNumber(team.quizPoints),
+      points: scoreNumber(team.points)
+    }))
+  };
+
+  showMessage(dom.editorMessage, "Liga-Eintrag wird gespeichert ...");
+  await set(ref(db, `${ROOT_PATH}/league/results/${entry.id}`), entry);
+  pendingLeagueImport = null;
+  if (dom.leagueImportBox) dom.leagueImportBox.classList.add("hidden");
+  showMessage(dom.editorMessage, "Liga-Eintrag gespeichert.", "success");
+}
+
+async function saveLeagueSettings() {
+  if (!requireAdmin()) return;
+  const settings = {
+    enabled: Boolean(dom.leagueEnabledInput?.checked),
+    showOnHome: Boolean(dom.leagueShowHomeInput?.checked),
+    updatedAt: Date.now()
+  };
+  await set(ref(db, `${ROOT_PATH}/league/settings`), settings);
+  showMessage(dom.leagueMessage, "Liga-Einstellungen gespeichert.", "success");
+}
+
+async function addManualLeagueEntry() {
+  if (!requireAdmin()) return;
+  const name = normalizeLeagueTeamName(dom.manualLeagueTeamInput?.value);
+  const points = scoreNumber(dom.manualLeaguePointsInput?.value);
+  const note = String(dom.manualLeagueNoteInput?.value || "").trim();
+
+  if (!name || !points) {
+    showMessage(dom.leagueMessage, "Bitte Teamname und Punkte eintragen.", "error");
+    return;
+  }
+
+  const id = `manual_${uid()}`;
+  const entry = {
+    id,
+    type: "manual",
+    title: note || "Manuelle Korrektur",
+    quarter: getQuarterKey(),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    teams: [{ name, points }]
+  };
+
+  await set(ref(db, `${ROOT_PATH}/league/results/${id}`), entry);
+  dom.manualLeagueTeamInput.value = "";
+  dom.manualLeaguePointsInput.value = "";
+  dom.manualLeagueNoteInput.value = "";
+  showMessage(dom.leagueMessage, "Korrektur gespeichert.", "success");
+}
+
+async function checkLeagueFirebase() {
+  try {
+    const snapshot = await get(ref(db, `${ROOT_PATH}/league/results`));
+    leagueResults = normalizeLeagueResults(snapshot.val());
+    renderAdminLeague();
+    showMessage(dom.leagueMessage, `Firebase-Prüfung: ${Object.keys(leagueResults).length} Liga-Einträge gefunden.`, "success");
+  } catch (error) {
+    showMessage(dom.leagueMessage, `Firebase-Prüfung fehlgeschlagen: ${error.message}`, "error");
+  }
+}
+
+
 function startAdminListener() {
   if (unsubscribeAdminEvents) unsubscribeAdminEvents();
   const adminRef = ref(db, `${ROOT_PATH}/adminEvents`);
@@ -1203,6 +1553,24 @@ dom.adminToggleBtn.addEventListener("click", () => dom.adminPanel.classList.togg
 
   dom.saveDraftBtn.addEventListener("click", saveDraft);
   dom.publishBtn.addEventListener("click", publishEvent);
+  dom.prepareLeagueImportEditorBtn?.addEventListener("click", prepareLeagueImport);
+  dom.cancelLeagueImportBtn?.addEventListener("click", () => {
+    pendingLeagueImport = null;
+    dom.leagueImportBox?.classList.add("hidden");
+    showMessage(dom.editorMessage, "");
+  });
+  dom.saveLeagueImportBtn?.addEventListener("click", saveLeagueImport);
+  dom.saveLeagueSettingsBtn?.addEventListener("click", saveLeagueSettings);
+  dom.checkLeagueFirebaseBtn?.addEventListener("click", checkLeagueFirebase);
+  dom.addManualLeagueEntryBtn?.addEventListener("click", addManualLeagueEntry);
+  dom.publicLeagueQuarterBtn?.addEventListener("click", () => {
+    publicLeagueMode = "quarter";
+    renderPublicLeague();
+  });
+  dom.publicLeagueAllTimeBtn?.addEventListener("click", () => {
+    publicLeagueMode = "allTime";
+    renderPublicLeague();
+  });
   dom.copyModeratorLinkBtn?.addEventListener("click", async () => {
     if (!dom.moderatorLinkInput?.value) return;
     try {
@@ -1225,6 +1593,7 @@ function initAuth() {
       dom.loginBox.classList.add("hidden");
       dom.adminWorkspace.classList.remove("hidden");
       startAdminListener();
+      startLeagueListener();
       return;
     }
 
@@ -1236,6 +1605,7 @@ function initAuth() {
     dom.loginBox.classList.remove("hidden");
     dom.adminWorkspace.classList.add("hidden");
     stopAdminListener();
+    stopLeagueListener();
   });
 }
 
