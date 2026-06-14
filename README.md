@@ -142,3 +142,12 @@ Firebase:
   - `bei 1 Quizt-Event dabei`
   - `bei X Quizt-Events dabei`
 - Restliche sichtbare Liga-Wording-Stellen wurden von „Eintrag“ auf „Liga-Event“ bzw. Quizt-Event-Wording umgestellt.
+
+
+## v8 Kompakte öffentliche Liga & Suche
+
+- Öffentliche Liga-Karten sind mobil kompakter.
+- Text „bei X Quizt-Events dabei“ ist kleiner und weniger dominant.
+- Öffentliche Liga hat ein Suchfeld für Teamnamen.
+- Suche filtert Quartals- und All-Time-Ranking, behält aber die echte Platzierung bei.
+- Öffentliche Liga-Links verwenden `v=8` gegen alte Cache-Stände.

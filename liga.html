@@ -154,6 +154,61 @@
       }
     }
 
+
+    .public-search-label {
+      margin-top: 18px;
+      max-width: 520px;
+    }
+    .public-search-label input {
+      min-height: 48px;
+      font-size: 1rem;
+    }
+    .public-clean .card {
+      border-radius: 26px;
+    }
+    .public-clean .rank-row {
+      min-height: auto;
+    }
+    .public-clean .rank-row .small {
+      color: var(--muted);
+      font-size: clamp(0.74rem, 2.7vw, 0.9rem);
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .public-clean .rank-row .points {
+      font-size: clamp(1.45rem, 6.8vw, 2.35rem);
+    }
+    @media (max-width:800px) {
+      .public-clean body {}
+      .public-clean .card {
+        padding: 18px;
+      }
+      .public-clean .rank-row {
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+        gap: 8px 10px;
+        padding: 13px 14px;
+        border-radius: 18px;
+      }
+      .public-clean .rank-row .place {
+        font-size: 1.55rem;
+      }
+      .public-clean .rank-row strong {
+        font-size: 1.02rem;
+        line-height: 1.15;
+      }
+      .public-clean .rank-row .points {
+        grid-column: 3;
+        text-align: right;
+      }
+      .public-clean .rank-row .small {
+        grid-column: 2 / 4;
+        margin-top: -2px;
+      }
+      .public-search-label {
+        max-width: none;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -163,7 +218,7 @@
         <h1>Quizt Liga</h1>
         <p>Aktuelles Quizt-Liga-Ranking.</p>
       </div>
-      <div class="pill">liga v7</div>
+      <div class="pill">liga v8</div>
     </div>
 
     <div class="actions top-links">
@@ -186,6 +241,9 @@
             <button id="publicAllTimeBtn" class="secondary" type="button">All-Time</button>
           </div>
         </div>
+        <label class="public-search-label">Team suchen
+          <input id="publicLeagueSearchInput" type="search" placeholder="Teamname eingeben ..." autocomplete="off" />
+        </label>
       </section>
       <section class="card">
         <h2>Aktuelles Quartal</h2>
@@ -258,7 +316,7 @@
         </div>
         <div class="actions">
           <button id="saveSettingsBtn" class="secondary" type="button">Anzeige-Einstellungen speichern</button>
-          <a id="publicPreviewLink" class="nav-btn" href="./liga.html?view=public&v=7" target="_blank" rel="noopener noreferrer">Öffentliche Liga ansehen</a>
+          <a id="publicPreviewLink" class="nav-btn" href="./liga.html?view=public&v=8" target="_blank" rel="noopener noreferrer">Öffentliche Liga ansehen</a>
         </div>
         <div id="settingsMsg" class="message"></div>
       </section>
@@ -348,6 +406,7 @@
       leagueResults: {},
       settings: { showHomeButton: false, showEventButton: false, publicMode: "quarter" },
       publicMode: new URLSearchParams(location.search).get("mode") || "quarter",
+      publicSearch: "",
       isPublicView: new URLSearchParams(location.search).get("view") === "public"
     };
 
@@ -365,6 +424,7 @@
       publicLeagueSubline: $("publicLeagueSubline"),
       publicQuarterBtn: $("publicQuarterBtn"),
       publicAllTimeBtn: $("publicAllTimeBtn"),
+      publicLeagueSearchInput: $("publicLeagueSearchInput"),
       publicQuarterRanking: $("publicQuarterRanking"),
       publicAllTimeRanking: $("publicAllTimeRanking"),
       email: $("email"),
@@ -485,19 +545,29 @@
       return amount === 1 ? "bei 1 Quizt-Event dabei" : `bei ${amount} Quizt-Events dabei`;
     }
 
-    function renderRanking(target, rows) {
-      if (!rows.length) {
-        target.innerHTML = "<p class='muted'>Noch keine Quizt-Events in der Liga.</p>";
+    function renderRanking(target, rows, options = {}) {
+      const search = String(options.search || "").trim().toLowerCase();
+      const filtered = search ? rows.filter((row) => String(row.name || "").toLowerCase().includes(search)) : rows;
+
+      if (!filtered.length) {
+        target.innerHTML = search
+          ? "<p class='muted'>Kein Team zu dieser Suche gefunden.</p>"
+          : "<p class='muted'>Noch keine Quizt-Events in der Liga.</p>";
         return;
       }
-      target.innerHTML = rows.map((row, index) => `
-        <div class="rank-row">
-          <div class="place">${index + 1}.</div>
-          <strong>${esc(row.name)}</strong>
-          <div class="points">${row.points}</div>
-          <span class="small">${participationLabel(row.events)}</span>
-        </div>
-      `).join("");
+
+      target.innerHTML = filtered.map((row) => {
+        const originalIndex = rows.findIndex((item) => item.name === row.name);
+        const place = originalIndex >= 0 ? originalIndex + 1 : "";
+        return `
+          <div class="rank-row">
+            <div class="place">${place}.</div>
+            <strong>${esc(row.name)}</strong>
+            <div class="points">${row.points}</div>
+            <span class="small">${participationLabel(row.events)}</span>
+          </div>
+        `;
+      }).join("");
     }
 
     function renderEntries() {
@@ -536,8 +606,8 @@
 
     function renderPublicOnly(tables = computeTables()) {
       if (!nodes.publicLeagueView) return;
-      renderRanking(nodes.publicQuarterRanking, tables.quarter);
-      renderRanking(nodes.publicAllTimeRanking, tables.all);
+      renderRanking(nodes.publicQuarterRanking, tables.quarter, { search: state.publicSearch });
+      renderRanking(nodes.publicAllTimeRanking, tables.all, { search: state.publicSearch });
 
       const mode = state.publicMode || state.settings.publicMode || "quarter";
       const showQuarter = mode === "quarter" || mode === "both";
@@ -630,7 +700,7 @@
       nodes.showEventButton.checked = Boolean(state.settings.showEventButton);
       nodes.publicModeSelect.value = state.settings.publicMode || "quarter";
       if (nodes.publicPreviewLink) {
-        nodes.publicPreviewLink.href = `./liga.html?view=public&v=7&mode=${encodeURIComponent(state.settings.publicMode || "quarter")}`;
+        nodes.publicPreviewLink.href = `./liga.html?view=public&v=8&mode=${encodeURIComponent(state.settings.publicMode || "quarter")}`;
       }
     }
 
@@ -769,6 +839,10 @@
     });
     nodes.publicAllTimeBtn.addEventListener("click", () => {
       state.publicMode = "allTime";
+      renderPublicOnly();
+    });
+    nodes.publicLeagueSearchInput.addEventListener("input", () => {
+      state.publicSearch = nodes.publicLeagueSearchInput.value;
       renderPublicOnly();
     });
     nodes.clearLocalBtn.addEventListener("click", () => {
