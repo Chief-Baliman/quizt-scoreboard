@@ -1140,7 +1140,7 @@ function stopAdminListener() {
 
 function buildLeaguePublicUrl(context = "home") {
   const mode = publicLeagueSettings.publicMode || "quarter";
-  const params = new URLSearchParams({ view: "public", mode, return: context, v: "8" });
+  const params = new URLSearchParams({ view: "public", mode, return: context, v: "11" });
 
   if (context === "event" && currentPublicEvent?.code) {
     params.set("code", currentPublicEvent.code);

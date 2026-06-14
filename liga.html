@@ -218,7 +218,7 @@
         <h1>Quizt Liga</h1>
         <p>Aktuelles Quizt-Liga-Ranking.</p>
       </div>
-      <div class="pill">liga v8</div>
+      <div class="pill">liga v11</div>
     </div>
 
     <div class="actions top-links">
@@ -343,6 +343,8 @@
         <p>Direktprüfung des Liga-Pfads.</p>
         <div class="actions">
           <button id="checkFirebaseBtn" class="secondary">Firebase-Liga prüfen</button>
+          <button id="exportJsonBtn" class="secondary">Backup JSON exportieren</button>
+          <button id="exportCsvBtn" class="secondary">CSV exportieren</button>
           <button id="clearLocalBtn" class="danger">Lokalen Fallback löschen</button>
         </div>
         <div id="firebaseMsg" class="message"></div>
@@ -445,6 +447,8 @@
       manualSaveBtn: $("manualSaveBtn"),
       manualMsg: $("manualMsg"),
       checkFirebaseBtn: $("checkFirebaseBtn"),
+      exportJsonBtn: $("exportJsonBtn"),
+      exportCsvBtn: $("exportCsvBtn"),
       clearLocalBtn: $("clearLocalBtn"),
       showHomeButton: $("showHomeButton"),
       showEventButton: $("showEventButton"),
@@ -810,6 +814,88 @@
       msg(nodes.manualMsg, "Korrektur gespeichert.", "success");
     }
 
+    function downloadTextFile(filename, content, mimeType = "text/plain;charset=utf-8") {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function buildExportBaseName() {
+      const now = new Date();
+      const stamp = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0")
+      ].join("-");
+      return `quizt-liga-backup-${stamp}`;
+    }
+
+    async function exportLeagueJson() {
+      await loadSettings();
+      const snapshot = await get(ref(db, `${ROOT_PATH}/league/results`));
+      const results = normalizeLeagueResults(snapshot.val());
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        rootPath: `${ROOT_PATH}/league`,
+        settings: state.settings,
+        results
+      };
+
+      downloadTextFile(`${buildExportBaseName()}.json`, JSON.stringify(exportData, null, 2), "application/json;charset=utf-8");
+      msg(nodes.firebaseMsg, `JSON-Backup exportiert: ${Object.keys(results).length} Liga-Events.`, "success");
+    }
+
+    function csvCell(value) {
+      const text = String(value ?? "");
+      return `"${text.replaceAll('"', '""')}"`;
+    }
+
+    async function exportLeagueCsv() {
+      const snapshot = await get(ref(db, `${ROOT_PATH}/league/results`));
+      const results = normalizeLeagueResults(snapshot.val());
+      const rows = [[
+        "event_id",
+        "typ",
+        "titel",
+        "code",
+        "quartal",
+        "erstellt_am",
+        "aktualisiert_am",
+        "platz",
+        "team",
+        "quizpunkte",
+        "ligapunkte"
+      ]];
+
+      Object.values(results).forEach((entry) => {
+        teamsOf(entry).forEach((team) => {
+          rows.push([
+            entry.id || "",
+            entry.type || "",
+            entry.title || "",
+            entry.code || "",
+            entry.quarter || "",
+            entry.createdAt ? new Date(entry.createdAt).toISOString() : "",
+            entry.updatedAt ? new Date(entry.updatedAt).toISOString() : "",
+            team.place || "",
+            team.name || "",
+            team.quizPoints ?? "",
+            team.points ?? ""
+          ]);
+        });
+      });
+
+      const csv = rows.map((row) => row.map(csvCell).join(";")).join("\n");
+      downloadTextFile(`${buildExportBaseName()}.csv`, csv, "text/csv;charset=utf-8");
+      msg(nodes.firebaseMsg, `CSV exportiert: ${Object.keys(results).length} Liga-Events.`, "success");
+    }
+
     async function checkFirebase() {
       msg(nodes.firebaseMsg, "Firebase wird geprüft ...");
       const snap = await get(ref(db, `${ROOT_PATH}/league/results`));
@@ -832,6 +918,8 @@
     nodes.saveImportBtn.addEventListener("click", saveImport);
     nodes.manualSaveBtn.addEventListener("click", saveManual);
     nodes.checkFirebaseBtn.addEventListener("click", checkFirebase);
+    nodes.exportJsonBtn.addEventListener("click", exportLeagueJson);
+    nodes.exportCsvBtn.addEventListener("click", exportLeagueCsv);
     nodes.saveSettingsBtn.addEventListener("click", saveSettings);
     nodes.publicQuarterBtn.addEventListener("click", () => {
       state.publicMode = "quarter";

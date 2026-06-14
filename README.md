@@ -165,3 +165,13 @@ Firebase:
 
 - In der Liga-Ansicht des Moderator-Modus wird jetzt die Punktevergabe erklärt:
   1. Platz 20, 2. Platz 16, 3. Platz 12, 4. Platz 9, 5. Platz 6, 6. Platz 4, 7. Platz 2, ab Platz 8 je 1 Punkt.
+
+
+## v11 Liga-Backup
+
+- In `liga.html` gibt es jetzt Export-Buttons:
+  - `Backup JSON exportieren`
+  - `CSV exportieren`
+- JSON enthält Settings + alle Liga-Events aus `quiztScoreboard/league/results`.
+- CSV enthält eine Zeile pro Team/Liga-Punktung und kann in Tabellen geöffnet werden.
+- Der Export ist als zusätzliche Sicherung gedacht; Firebase bleibt weiterhin der Live-Speicher.
