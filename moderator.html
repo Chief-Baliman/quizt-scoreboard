@@ -600,6 +600,100 @@
       }
     }
 
+
+    .mod-toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .mod-toolbar .ghost-btn,
+    .mod-toolbar button {
+      min-height: 46px;
+    }
+    .mod-view-toggle {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 16px 0 0;
+    }
+    .mod-view-toggle button.active {
+      border-color: rgba(255, 216, 74, 0.55);
+      color: var(--yellow);
+      background: rgba(255, 216, 74, 0.10);
+    }
+    .mod-league-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+    .mod-league-controls button.active {
+      border-color: rgba(255, 216, 74, 0.55);
+      color: var(--yellow);
+      background: rgba(255, 216, 74, 0.10);
+    }
+    .mod-league-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .mod-league-row {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 15px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(129, 154, 190, 0.14);
+      background: rgba(255,255,255,0.045);
+    }
+    .mod-league-row span {
+      color: var(--orange);
+      font-size: 1.55rem;
+      font-weight: 1000;
+    }
+    .mod-league-row strong {
+      font-size: clamp(1.15rem, 3vw, 1.7rem);
+      overflow-wrap: anywhere;
+    }
+    .mod-league-row b {
+      color: var(--yellow);
+      font-size: clamp(1.5rem, 4vw, 2.4rem);
+    }
+    .mod-league-row small {
+      display: block;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 800;
+    }
+    .mod-league-empty {
+      color: var(--muted);
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.035);
+    }
+    @media (max-width: 760px) {
+      .mod-toolbar {
+        width: 100%;
+        justify-content: stretch;
+      }
+      .mod-toolbar .ghost-btn,
+      .mod-toolbar button {
+        flex: 1 1 150px;
+        justify-content: center;
+        text-align: center;
+      }
+      .mod-league-row {
+        grid-template-columns: 42px minmax(0,1fr);
+      }
+      .mod-league-row b {
+        grid-column: 2;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -619,14 +713,27 @@
           <h1 id="modTitle">Moderator-Ansicht</h1>
           <p id="modMeta" class="muted">Entwurf wird geladen ...</p>
         </div>
-        <a class="ghost-btn" href="./">Normale Ansicht</a>
+        <div class="mod-toolbar">
+          <button id="showModeratorBtn" class="ghost-btn active" type="button">Moderation</button>
+          <button id="showLeagueBtn" class="ghost-btn" type="button">Liga</button>
+          <a class="ghost-btn" href="./">Normale Ansicht</a>
+        </div>
       </div>
 
-      <div class="mod-sort-box">
-        <label for="modSortSelect">Ranking anzeigen nach</label>
-        <select id="modSortSelect">
-          <option value="total">Gesamtwertung</option>
-        </select>
+      <div id="moderatorControls">
+        <div class="mod-sort-box">
+          <label for="modSortSelect">Ranking anzeigen nach</label>
+          <select id="modSortSelect">
+            <option value="total">Gesamtwertung</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="leagueControls" class="hidden">
+        <div class="mod-league-controls">
+          <button id="leagueQuarterBtn" class="ghost-btn active" type="button">Quartalsranking</button>
+          <button id="leagueAllTimeBtn" class="ghost-btn" type="button">All-Time-Ranking</button>
+        </div>
       </div>
 
       <div id="modStatus" class="message mod-status">Moderator-View wird geladen ...</div>
@@ -662,10 +769,19 @@
       meta: $("#modMeta"),
       status: $("#modStatus"),
       content: $("#modContent"),
-      sortSelect: $("#modSortSelect")
+      sortSelect: $("#modSortSelect"),
+      moderatorControls: $("#moderatorControls"),
+      leagueControls: $("#leagueControls"),
+      showModeratorBtn: $("#showModeratorBtn"),
+      showLeagueBtn: $("#showLeagueBtn"),
+      leagueQuarterBtn: $("#leagueQuarterBtn"),
+      leagueAllTimeBtn: $("#leagueAllTimeBtn")
     };
 
     let currentEvent = null;
+    let currentView = "moderator";
+    let leagueMode = "quarter";
+    let leagueResults = {};
 
     function escapeHtml(value = "") {
       return String(value).replace(/[&<>"']/g, (char) => ({
@@ -741,6 +857,101 @@
     function showStatus(text, type = "") {
       dom.status.textContent = text;
       dom.status.className = `message mod-status ${type}`;
+    }
+
+
+    function getQuarterKey(date = new Date()) {
+      return `${date.getFullYear()}-Q${Math.floor(date.getMonth() / 3) + 1}`;
+    }
+
+    function normalizeLeagueResults(value) {
+      if (!value) return {};
+      if (Array.isArray(value)) {
+        return Object.fromEntries(value.filter(Boolean).map((entry, index) => [entry.id || `legacy_${index}`, entry]));
+      }
+      return value;
+    }
+
+    function normalizeLeagueTeams(entry) {
+      if (Array.isArray(entry?.teams)) return entry.teams;
+      if (entry?.teams && typeof entry.teams === "object") return Object.values(entry.teams);
+      return [];
+    }
+
+    function calculateLeagueTables() {
+      const quarterKey = getQuarterKey();
+      const quarter = new Map();
+      const allTime = new Map();
+
+      Object.values(leagueResults || {}).forEach((entry) => {
+        normalizeLeagueTeams(entry).forEach((team) => {
+          const name = String(team.name || "").trim();
+          const points = scoreNumber(team.points);
+          if (!name || !points) return;
+
+          const allRow = allTime.get(name) || { name, points: 0, entries: 0 };
+          allRow.points += points;
+          allRow.entries += 1;
+          allTime.set(name, allRow);
+
+          if ((entry.quarter || "") === quarterKey) {
+            const qRow = quarter.get(name) || { name, points: 0, entries: 0 };
+            qRow.points += points;
+            qRow.entries += 1;
+            quarter.set(name, qRow);
+          }
+        });
+      });
+
+      const sortRows = (rows) => [...rows.values()].sort((a, b) => b.points - a.points || a.name.localeCompare(b.name, "de"));
+      return { quarter: sortRows(quarter), allTime: sortRows(allTime), quarterKey };
+    }
+
+    function renderLeagueView() {
+      const tables = calculateLeagueTables();
+      const rows = leagueMode === "allTime" ? tables.allTime : tables.quarter;
+      const label = leagueMode === "allTime" ? "All-Time-Ranking" : `Quartalsranking ${tables.quarterKey}`;
+
+      dom.title.textContent = "Quizt Liga";
+      dom.meta.textContent = `${label} · für die Moderation`;
+      showStatus("Liga-Ansicht für die Moderation. Zur normalen Moderationsansicht kannst du jederzeit zurückwechseln.", "success");
+
+      dom.content.innerHTML = `
+        <section class="mod-ranking">
+          <h2>${escapeHtml(label)} <small>zum Einblenden oder Vorlesen</small></h2>
+          <div class="mod-league-grid">
+            ${rows.length ? rows.map((row, index) => `
+              <article class="mod-league-row">
+                <span>${index + 1}.</span>
+                <div>
+                  <strong>${escapeHtml(row.name)}</strong>
+                  <small>${row.entries} ${row.entries === 1 ? "Eintrag" : "Einträge"}</small>
+                </div>
+                <b>${row.points}</b>
+              </article>
+            `).join("") : `<p class="mod-league-empty">Noch keine Liga-Einträge vorhanden.</p>`}
+          </div>
+        </section>
+      `;
+
+      dom.leagueQuarterBtn.classList.toggle("active", leagueMode === "quarter");
+      dom.leagueAllTimeBtn.classList.toggle("active", leagueMode === "allTime");
+    }
+
+    function setView(view) {
+      currentView = view;
+      const leagueActive = view === "league";
+
+      dom.moderatorControls.classList.toggle("hidden", leagueActive);
+      dom.leagueControls.classList.toggle("hidden", !leagueActive);
+      dom.showModeratorBtn.classList.toggle("active", !leagueActive);
+      dom.showLeagueBtn.classList.toggle("active", leagueActive);
+
+      if (leagueActive) {
+        renderLeagueView();
+      } else if (currentEvent) {
+        render(currentEvent);
+      }
     }
 
     function render(event) {
@@ -820,6 +1031,24 @@
       if (currentEvent) render(currentEvent);
     });
 
+    dom.showModeratorBtn?.addEventListener("click", () => setView("moderator"));
+    dom.showLeagueBtn?.addEventListener("click", () => setView("league"));
+    dom.leagueQuarterBtn?.addEventListener("click", () => {
+      leagueMode = "quarter";
+      renderLeagueView();
+    });
+    dom.leagueAllTimeBtn?.addEventListener("click", () => {
+      leagueMode = "allTime";
+      renderLeagueView();
+    });
+
+    onValue(ref(db, `${ROOT_PATH}/league/results`), (snapshot) => {
+      leagueResults = normalizeLeagueResults(snapshot.val());
+      if (currentView === "league") renderLeagueView();
+    }, (error) => {
+      if (currentView === "league") showStatus(`Liga konnte nicht geladen werden: ${error.message}`, "error");
+    });
+
     if (!modCode) {
       dom.meta.textContent = "";
       showStatus("Kein Moderator-Code gefunden.", "error");
@@ -834,7 +1063,11 @@
           return;
         }
         currentEvent = event;
-        render(event);
+        if (currentView === "league") {
+          renderLeagueView();
+        } else {
+          render(event);
+        }
       }, (error) => {
         showStatus(`Moderator-View konnte nicht geladen werden: ${error.message}`, "error");
       });

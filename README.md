@@ -108,3 +108,12 @@ Firebase:
   - Admin-Login nur dezent unten
 - Event-Seiten-Link enthält jetzt den Event-Code und kann zurück zum Event führen.
 - Buttons auf Event-Seiten wurden für Mobile sauberer angeordnet.
+
+
+## v4 Moderator-Liga
+
+- In `moderator.html` kann zwischen normaler Moderationsansicht und Liga gewechselt werden.
+- Liga-Ansicht bietet Umschalter für Quartalsranking und All-Time-Ranking.
+- Rückwechsel zur normalen Moderationsansicht ist jederzeit möglich.
+- Liga-Daten werden direkt aus `quiztScoreboard/league/results` gelesen.
+- Haupt-Scoreboard bleibt getrennt, Liga-Verwaltung bleibt `liga.html`.
