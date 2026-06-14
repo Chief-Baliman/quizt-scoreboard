@@ -66,7 +66,7 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
 - Parent-Container blockieren das seitliche Scrollen nicht mehr.
 
 
-## Änderungen: Liga stabil integriert
+## Änderungen: Liga stabil integriert v37
 
 Basis: bestätigter stabiler Stand v35.
 
@@ -84,3 +84,10 @@ Neu:
 
 Wichtig:
 Firebase Rules müssen den Pfad `quiztScoreboard/league` enthalten.
+
+## v37 Liga Stabil
+
+- Liga-Listener liest zusätzlich sofort per `get()` aus Firebase.
+- Button „Firebase-Liga prüfen“ nutzt denselben geprüften Ladeweg.
+- Nach Speichern und manueller Korrektur wird die Liga sofort neu aus Firebase geladen.
+- Renderfehler werden sichtbar im Liga-Status angezeigt statt still zu scheitern.

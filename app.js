@@ -1267,46 +1267,83 @@ function renderPublicLeague() {
 }
 
 function renderAdminLeague() {
-  if (dom.leagueEnabledInput) dom.leagueEnabledInput.checked = Boolean(leagueSettings.enabled);
-  if (dom.leagueShowHomeInput) dom.leagueShowHomeInput.checked = Boolean(leagueSettings.showOnHome);
+  try {
+    if (dom.leagueEnabledInput) dom.leagueEnabledInput.checked = Boolean(leagueSettings.enabled);
+    if (dom.leagueShowHomeInput) dom.leagueShowHomeInput.checked = Boolean(leagueSettings.showOnHome);
 
-  const tables = calculateLeagueTables();
-  renderLeagueList(dom.adminLeagueQuarter, tables.quarter, "Noch keine Punkte im aktuellen Quartal.");
-  renderLeagueList(dom.adminLeagueAllTime, tables.allTime, "Noch keine All-Time-Punkte.");
+    const tables = calculateLeagueTables();
+    renderLeagueList(dom.adminLeagueQuarter, tables.quarter, "Noch keine Punkte im aktuellen Quartal.");
+    renderLeagueList(dom.adminLeagueAllTime, tables.allTime, "Noch keine All-Time-Punkte.");
 
-  const results = Object.values(leagueResults || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const results = Object.values(leagueResults || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-  if (dom.leagueStatusBox) {
-    dom.leagueStatusBox.textContent = `Liga geladen · ${results.length} gespeicherte Einträge · aktuelles Quartal: ${tables.quarterKey}`;
-  }
+    setLeagueStatus(`Liga geladen · ${results.length} gespeicherte Einträge · aktuelles Quartal: ${tables.quarterKey}`);
 
-  if (dom.leagueResultsList) {
-    dom.leagueResultsList.innerHTML = results.length ? results.slice(0, 30).map((entry) => `
-      <article class="league-result-item">
-        <div>
-          <strong>${escapeHtml(entry.title || "Liga-Eintrag")}</strong>
-          <small>${escapeHtml(entry.quarter || "")} · ${formatDate(entry.createdAt)} · ${entry.type === "manual" ? "Manuell" : "Event"}</small>
-          <span>${normalizeLeagueTeams(entry).map((team) => `${escapeHtml(team.name)}: ${scoreNumber(team.points)}`).join(" · ")}</span>
-        </div>
-        <button class="tiny-btn danger" type="button" data-delete-league-result="${escapeHtml(entry.id)}">Löschen</button>
-      </article>
-    `).join("") : "<p class='muted'>Noch keine gespeicherten Liga-Einträge.</p>";
+    if (dom.leagueResultsList) {
+      dom.leagueResultsList.innerHTML = results.length ? results.slice(0, 30).map((entry) => `
+        <article class="league-result-item">
+          <div>
+            <strong>${escapeHtml(entry.title || "Liga-Eintrag")}</strong>
+            <small>${escapeHtml(entry.quarter || "")} · ${formatDate(entry.createdAt)} · ${entry.type === "manual" ? "Manuell" : "Event"}</small>
+            <span>${normalizeLeagueTeams(entry).map((team) => `${escapeHtml(team.name)}: ${scoreNumber(team.points)}`).join(" · ")}</span>
+          </div>
+          <button class="tiny-btn danger" type="button" data-delete-league-result="${escapeHtml(entry.id)}">Löschen</button>
+        </article>
+      `).join("") : "<p class='muted'>Noch keine gespeicherten Liga-Einträge.</p>";
 
-    dom.leagueResultsList.querySelectorAll("[data-delete-league-result]").forEach((button) => {
-      button.addEventListener("click", async () => {
-        if (!requireAdmin()) return;
-        const id = button.dataset.deleteLeagueResult;
-        await remove(ref(db, `${ROOT_PATH}/league/results/${id}`));
-        showMessage(dom.leagueMessage, "Liga-Eintrag gelöscht.", "success");
+      dom.leagueResultsList.querySelectorAll("[data-delete-league-result]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          if (!requireAdmin()) return;
+          const id = button.dataset.deleteLeagueResult;
+          await remove(ref(db, `${ROOT_PATH}/league/results/${id}`));
+          showMessage(dom.leagueMessage, "Liga-Eintrag gelöscht.", "success");
+          await loadLeagueOnce("Nach Löschen neu geladen");
+        });
       });
-    });
-  }
+    }
 
-  renderPublicLeague();
+    renderPublicLeague();
+  } catch (error) {
+    setLeagueStatus(`Liga-Renderfehler: ${error.message}`);
+    showMessage(dom.leagueMessage, `Liga-Renderfehler: ${error.message}`, "error");
+    console.error(error);
+  }
+}
+
+
+function setLeagueStatus(text) {
+  if (dom.leagueStatusBox) dom.leagueStatusBox.textContent = text;
+}
+
+async function loadLeagueOnce(sourceLabel = "Firebase-Prüfung") {
+  try {
+    setLeagueStatus(`${sourceLabel}: lade Liga-Daten ...`);
+    const snapshot = await get(ref(db, `${ROOT_PATH}/league`));
+    const value = snapshot.val() || {};
+    leagueSettings = {
+      enabled: Boolean(value.settings?.enabled),
+      showOnHome: Boolean(value.settings?.showOnHome)
+    };
+    leagueResults = normalizeLeagueResults(value.results);
+    renderAdminLeague();
+    renderPublicLeague();
+    showMessage(dom.leagueMessage, `${sourceLabel}: ${Object.keys(leagueResults).length} Liga-Einträge gefunden.`, "success");
+    return true;
+  } catch (error) {
+    setLeagueStatus(`${sourceLabel}: Firebase-Fehler: ${error.message}`);
+    showMessage(dom.leagueMessage, `${sourceLabel}: Firebase-Fehler: ${error.message}`, "error");
+    return false;
+  }
 }
 
 function startLeagueListener() {
   if (unsubscribeLeague) unsubscribeLeague();
+
+  setLeagueStatus("Liga-Status v37: Listener wird gestartet ...");
+
+  // Sofort einmal aktiv lesen. So sieht man direkt, ob Firebase erreichbar ist.
+  loadLeagueOnce("Initiale Liga-Prüfung");
+
   unsubscribeLeague = onValue(ref(db, `${ROOT_PATH}/league`), (snapshot) => {
     const value = snapshot.val() || {};
     leagueSettings = {
@@ -1317,8 +1354,8 @@ function startLeagueListener() {
     renderAdminLeague();
     renderPublicLeague();
   }, (error) => {
-    showMessage(dom.leagueMessage, `Firebase-Liga konnte nicht gelesen werden: ${error.message}`, "error");
-    if (dom.leagueStatusBox) dom.leagueStatusBox.textContent = `Firebase-Fehler: ${error.message}`;
+    setLeagueStatus(`Liga-Listener: Firebase-Fehler: ${error.message}`);
+    showMessage(dom.leagueMessage, `Liga-Listener: Firebase-Fehler: ${error.message}`, "error");
   });
 }
 
@@ -1404,6 +1441,7 @@ async function saveLeagueImport() {
   pendingLeagueImport = null;
   if (dom.leagueImportBox) dom.leagueImportBox.classList.add("hidden");
   showMessage(dom.editorMessage, "Liga-Eintrag gespeichert.", "success");
+  await loadLeagueOnce("Nach Speichern neu geladen");
 }
 
 async function saveLeagueSettings() {
@@ -1444,17 +1482,11 @@ async function addManualLeagueEntry() {
   dom.manualLeaguePointsInput.value = "";
   dom.manualLeagueNoteInput.value = "";
   showMessage(dom.leagueMessage, "Korrektur gespeichert.", "success");
+  await loadLeagueOnce("Nach Korrektur neu geladen");
 }
 
 async function checkLeagueFirebase() {
-  try {
-    const snapshot = await get(ref(db, `${ROOT_PATH}/league/results`));
-    leagueResults = normalizeLeagueResults(snapshot.val());
-    renderAdminLeague();
-    showMessage(dom.leagueMessage, `Firebase-Prüfung: ${Object.keys(leagueResults).length} Liga-Einträge gefunden.`, "success");
-  } catch (error) {
-    showMessage(dom.leagueMessage, `Firebase-Prüfung fehlgeschlagen: ${error.message}`, "error");
-  }
+  await loadLeagueOnce("Manuelle Firebase-Prüfung");
 }
 
 
