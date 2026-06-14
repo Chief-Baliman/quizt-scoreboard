@@ -3163,3 +3163,72 @@ select {
     text-align: center;
   }
 }
+
+
+/* v5: öffentliche Liga-Buttons kompakter */
+.scoreboard-actions {
+  gap: 8px;
+}
+
+.scoreboard-actions .ghost-btn,
+.scoreboard-actions a.ghost-btn,
+.public-quick-actions .insta-cta {
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 16px;
+  font-size: clamp(0.82rem, 2.6vw, 1rem);
+  letter-spacing: 0.08em;
+}
+
+.scoreboard-actions a#leagueEventBtn {
+  max-width: 140px;
+  flex: 0 0 auto;
+}
+
+.public-quick-actions {
+  margin-top: 10px;
+}
+
+.public-quick-actions a#leagueHomeBtn {
+  max-width: 180px;
+  margin: 0 auto;
+  padding-inline: 18px;
+}
+
+@media (max-width: 760px) {
+  .scoreboard-head {
+    align-items: flex-start;
+  }
+
+  .scoreboard-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .scoreboard-actions .ghost-btn,
+  .scoreboard-actions a.ghost-btn {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 124px;
+    min-height: 42px;
+    padding: 9px 14px;
+    border-radius: 16px;
+    font-size: 0.86rem;
+  }
+
+  .scoreboard-actions a#leagueEventBtn {
+    min-width: 86px;
+    max-width: 104px;
+  }
+
+  .public-quick-actions .insta-cta {
+    width: auto;
+    min-width: 96px;
+    max-width: 150px;
+    min-height: 40px;
+    padding: 9px 14px;
+    font-size: 0.84rem;
+  }
+}

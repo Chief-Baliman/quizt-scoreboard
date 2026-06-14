@@ -117,3 +117,11 @@ Firebase:
 - Rückwechsel zur normalen Moderationsansicht ist jederzeit möglich.
 - Liga-Daten werden direkt aus `quiztScoreboard/league/results` gelesen.
 - Haupt-Scoreboard bleibt getrennt, Liga-Verwaltung bleibt `liga.html`.
+
+
+## v5 Optik
+
+- Liga-Buttons auf Code- und Event-Seiten deutlich kompakter.
+- Auf Mobile werden „Liga“ und „Anderer Code“ nicht mehr als riesige Vollbreiten-Buttons angezeigt.
+- Öffentliche Liga-Ansicht blendet die Versionsplakette aus.
+- Öffentliche Liga-Ansicht nutzt neutraleren Headertext.
