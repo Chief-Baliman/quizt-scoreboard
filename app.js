@@ -1206,9 +1206,62 @@ function buildLeagueEntryFromPending() {
   };
 }
 
+function getLeagueLocalStorageKey() {
+  return `${ROOT_PATH}:leagueResultsFallback`;
+}
+
+function loadLocalLeagueResults() {
+  try {
+    const raw = localStorage.getItem(getLeagueLocalStorageKey());
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    console.warn("Lokale Liga-Daten konnten nicht gelesen werden", error);
+    return {};
+  }
+}
+
+function saveLocalLeagueResult(entry) {
+  if (!entry?.id) return;
+  try {
+    const existing = loadLocalLeagueResults();
+    existing[entry.id] = entry;
+    localStorage.setItem(getLeagueLocalStorageKey(), JSON.stringify(existing));
+  } catch (error) {
+    console.warn("Lokale Liga-Daten konnten nicht gespeichert werden", error);
+  }
+}
+
+function forceRenderLeagueTables(resultsObject, statusText = "") {
+  const tables = calculateLeagueTables(resultsObject);
+  renderLeagueList(dom.adminLeagueQuarter, tables.quarter, "Noch keine Punkte im aktuellen Quartal.");
+  renderLeagueList(dom.adminLeagueAllTime, tables.allTime, "Noch keine All-Time-Punkte.");
+
+  const results = Object.values(resultsObject || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  if (dom.leagueResultsList) {
+    dom.leagueResultsList.innerHTML = results.length ? results.slice(0, 20).map((entry) => `
+      <article class="league-result-item">
+        <div>
+          <strong>${escapeHtml(entry.title || "Liga-Eintrag")}</strong>
+          <small>${escapeHtml(entry.quarter || "")} · ${formatDate(entry.createdAt)} · ${entry.type === "manual" ? "Manuell" : entry.type === "preview" ? "Vorbereitet, noch nicht gespeichert" : "Event"}</small>
+        </div>
+        <div class="league-result-teams">
+          ${normalizeLeagueTeamsValue(entry.teams).map((team) => `<span>${escapeHtml(team.name)}: ${scoreNumber(team.points)}</span>`).join("")}
+        </div>
+        ${entry.type === "preview" ? "<span class='tiny-status'>Noch speichern</span>" : `<button class="tiny-btn danger" type="button" data-delete-league-result="${escapeHtml(entry.id)}">Entfernen</button>`}
+      </article>
+    `).join("") : "<p class='muted'>Noch keine Liga-Einträge gespeichert.</p>";
+  }
+
+  if (dom.leagueDebugBox) {
+    const count = results.length;
+    dom.leagueDebugBox.textContent = statusText || `Liga-Status: v47 aktiv · ${count} Eintrag${count === 1 ? "" : "e"} sichtbar.`;
+  }
+}
+
 function getRenderableLeagueResults() {
-  const merged = { ...(leagueResults || {}) };
-  if (lastSavedLeagueEntry?.id && !merged[lastSavedLeagueEntry.id]) {
+  const merged = { ...loadLocalLeagueResults(), ...(leagueResults || {}) };
+  if (lastSavedLeagueEntry?.id) {
     merged[lastSavedLeagueEntry.id] = lastSavedLeagueEntry;
   }
 
@@ -1306,49 +1359,34 @@ function renderAdminLeague() {
   if (dom.leagueEnabledInput) dom.leagueEnabledInput.checked = Boolean(leagueSettings.enabled);
   if (dom.leagueShowHomeInput) dom.leagueShowHomeInput.checked = Boolean(leagueSettings.showOnHome);
 
-  const tables = calculateLeagueTables(getRenderableLeagueResults());
-  renderLeagueList(dom.adminLeagueQuarter, tables.quarter);
-  renderLeagueList(dom.adminLeagueAllTime, tables.allTime);
+  const renderable = getRenderableLeagueResults();
+  const savedResultsCount = Object.keys(leagueResults || {}).length;
+  const localResultsCount = Object.keys(loadLocalLeagueResults()).length;
+  const previewCount = pendingLeagueImport ? 1 : 0;
+
+  forceRenderLeagueTables(
+    renderable,
+    `Liga-Status: v47 aktiv · Firebase: ${savedResultsCount} · lokal: ${localResultsCount}${previewCount ? " · 1 vorbereitete Übernahme sichtbar" : ""}.`
+  );
 
   updateLeagueActiveEventHint();
-
   renderLastSavedLeagueEntry(lastSavedLeagueEntry);
 
-  const results = Object.values(getRenderableLeagueResults()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  const savedResultsCount = Object.keys(leagueResults || {}).length;
-  const previewCount = pendingLeagueImport ? 1 : 0;
-  if (dom.leagueDebugBox) {
-    dom.leagueDebugBox.textContent = `Liga-Status: ${savedResultsCount} gespeicherte Einträge geladen${previewCount ? " · 1 vorbereitete Übernahme sichtbar" : ""}.`;
-  }
-
-  if (!dom.leagueResultsList) return;
-  if (!results.length) {
-    dom.leagueResultsList.innerHTML = "<p class='muted'>Noch keine Liga-Einträge gespeichert.</p>";
-    return;
-  }
-
-  dom.leagueResultsList.innerHTML = results.slice(0, 20).map((entry) => `
-    <article class="league-result-item">
-      <div>
-        <strong>${escapeHtml(entry.title || "Liga-Eintrag")}</strong>
-        <small>${escapeHtml(entry.quarter || "")} · ${formatDate(entry.createdAt)} · ${entry.type === "manual" ? "Manuell" : entry.type === "preview" ? "Vorbereitet, noch nicht gespeichert" : "Event"}</small>
-      </div>
-      <div class="league-result-teams">
-        ${normalizeLeagueTeamsValue(entry.teams).map((team) => `<span>${escapeHtml(team.name)}: ${scoreNumber(team.points)}</span>`).join("")}
-      </div>
-      ${entry.type === "preview" ? "<span class='tiny-status'>Noch speichern</span>" : `<button class="tiny-btn danger" type="button" data-delete-league-result="${escapeHtml(entry.id)}">Entfernen</button>`}
-    </article>
-  `).join("");
-
-  dom.leagueResultsList.querySelectorAll("[data-delete-league-result]").forEach((button) => {
+  dom.leagueResultsList?.querySelectorAll("[data-delete-league-result]").forEach((button) => {
     button.addEventListener("click", async () => {
       if (!requireAdmin()) return;
       const id = button.dataset.deleteLeagueResult;
       await remove(ref(db, `${ROOT_PATH}/league/results/${id}`));
+      const local = loadLocalLeagueResults();
+      delete local[id];
+      localStorage.setItem(getLeagueLocalStorageKey(), JSON.stringify(local));
+      delete leagueResults[id];
+      renderAdminLeague();
       showMessage(dom.leagueMessage, "Liga-Eintrag entfernt.", "success");
     });
   });
 }
+
 
 function startLeagueListener() {
   if (unsubscribeLeague) unsubscribeLeague();
@@ -1539,9 +1577,11 @@ async function saveLeagueImport(event) {
       [entry.id]: entry
     };
     lastSavedLeagueEntry = entry;
+    saveLocalLeagueResult(entry);
 
     pendingLeagueImport = null;
     dom.leagueImportBox?.classList.add("hidden");
+    forceRenderLeagueTables(getRenderableLeagueResults(), "Liga-Status: v47 aktiv · Eintrag wurde gerade gespeichert und direkt angezeigt.");
     renderAdminLeague();
     renderPublicLeague();
     updateLeagueActiveEventHint();
