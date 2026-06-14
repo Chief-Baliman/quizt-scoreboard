@@ -85,3 +85,15 @@ Upload:
 
 Firebase:
 - `database.rules.json` enthält den Pfad `quiztScoreboard/league`.
+
+
+## v2 Liga-Seite
+
+- Links ausgewähltes Event kann durch erneutes Anklicken geschlossen werden.
+- `liga.html` enthält Links zurück zum Scoreboard / normalen Admin-Bereich.
+- Anzeige-Einstellungen:
+  - Button auf Code-Eingabe-Seite anzeigen
+  - Button auf Event-/Ranking-Seiten anzeigen
+  - Standard-Ranking: Quartal, All-Time oder beide
+- `index.html` zeigt Liga-Buttons basierend auf diesen Einstellungen.
+- Haupt-`app.js` wurde nur minimal ergänzt, um öffentliche Liga-Buttons einzublenden.

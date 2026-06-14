@@ -44,6 +44,8 @@ const dom = {
   eventCodeInput: $("#eventCodeInput"),
   eventPasswordInput: $("#eventPasswordInput"),
   publicMessage: $("#publicMessage"),
+  leagueHomeBtn: $("#leagueHomeBtn"),
+  leagueEventBtn: $("#leagueEventBtn"),
   backToCodeBtn: $("#backToCodeBtn"),
   eventTitle: $("#eventTitle"),
   eventCodeBadge: $("#eventCodeBadge"),
@@ -97,6 +99,8 @@ let activeDraft = null;
 let unsubscribeAdminEvents = null;
 let pendingPrivateCode = "";
 let currentPublicEvent = null;
+let publicLeagueSettings = { showHomeButton: false, showEventButton: false, publicMode: "quarter" };
+let unsubscribePublicLeagueSettings = null;
 
 
 function setupBrandLogo() {
@@ -1132,6 +1136,43 @@ function stopAdminListener() {
   dom.editorCard.classList.add("hidden");
 }
 
+function buildLeaguePublicUrl() {
+  const mode = publicLeagueSettings.publicMode || "quarter";
+  return `./liga.html?view=public&mode=${encodeURIComponent(mode)}`;
+}
+
+function renderPublicLeagueButtons() {
+  const url = buildLeaguePublicUrl();
+
+  if (dom.leagueHomeBtn) {
+    dom.leagueHomeBtn.href = url;
+    dom.leagueHomeBtn.classList.toggle("hidden", !publicLeagueSettings.showHomeButton);
+  }
+
+  if (dom.leagueEventBtn) {
+    dom.leagueEventBtn.href = url;
+    dom.leagueEventBtn.classList.toggle("hidden", !publicLeagueSettings.showEventButton);
+  }
+}
+
+function startPublicLeagueSettingsListener() {
+  if (unsubscribePublicLeagueSettings) unsubscribePublicLeagueSettings();
+
+  unsubscribePublicLeagueSettings = onValue(ref(db, `${ROOT_PATH}/league/settings`), (snapshot) => {
+    const settings = snapshot.val() || {};
+    publicLeagueSettings = {
+      showHomeButton: Boolean(settings.showHomeButton ?? settings.showOnHome),
+      showEventButton: Boolean(settings.showEventButton),
+      publicMode: settings.publicMode || "quarter"
+    };
+    renderPublicLeagueButtons();
+  }, () => {
+    publicLeagueSettings = { showHomeButton: false, showEventButton: false, publicMode: "quarter" };
+    renderPublicLeagueButtons();
+  });
+}
+
+
 function bindEvents() {
   setupBrandLogo();
 
@@ -1255,5 +1296,6 @@ function initFromUrl() {
 }
 
 bindEvents();
+startPublicLeagueSettingsListener();
 initAuth();
 initFromUrl();
