@@ -1,4 +1,4 @@
-# Quizt Scoreboard v42
+# Quizt Scoreboard v44
 
 Responsive Punkteübersicht für Quizt Events mit Firebase Realtime Database und GitHub Pages.
 
@@ -123,3 +123,19 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
   - dokumentweiter Klick-Fallback
 - Beim Klick erscheint sofort eine sichtbare Meldung „Liga-Übernahme wird vorbereitet ...“.
 - Fehler werden sichtbar im Editor ausgegeben, statt scheinbar nichts zu tun.
+
+
+## Änderungen in v43
+
+- Der Speichern-Button heißt jetzt klarer: `Liga-Eintrag jetzt speichern`.
+- Beim Speichern erscheint sofort eine sichtbare Meldung.
+- Falls Firebase das Speichern blockiert, wird die konkrete Fehlermeldung sichtbar angezeigt.
+- Nach erfolgreichem Speichern wird die Liga-Tabelle sofort lokal aktualisiert, ohne auf den Firebase-Listener warten zu müssen.
+- Zusätzlicher Fallback für den Speichern-Klick ergänzt.
+
+
+## Änderungen in v44
+
+- Fehler behoben: `leagueResults is not defined`.
+- Fehlende Liga-Zustandsvariablen wurden ergänzt.
+- Liga-Übernahme kann jetzt wieder vorbereitet werden.

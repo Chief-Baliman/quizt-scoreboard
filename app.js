@@ -120,6 +120,11 @@ let activeDraft = null;
 let unsubscribeAdminEvents = null;
 let pendingPrivateCode = "";
 let currentPublicEvent = null;
+let unsubscribeLeague = null;
+let leagueSettings = { enabled: false, showOnHome: false };
+let leagueResults = {};
+let pendingLeagueImport = null;
+let publicLeagueMode = "quarter";
 
 
 function setupBrandLogo() {
@@ -1426,9 +1431,23 @@ function renderLeagueImportRows() {
   });
 }
 
-async function saveLeagueImport() {
-  if (!requireAdmin() || !pendingLeagueImport) return;
+async function saveLeagueImport(event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
 
+  if (!requireAdmin()) {
+    showMessage(dom.editorMessage, "Du bist nicht als Admin eingeloggt. Liga-Eintrag wurde nicht gespeichert.", "error");
+    showMessage(dom.leagueMessage, "Du bist nicht als Admin eingeloggt. Liga-Eintrag wurde nicht gespeichert.", "error");
+    return;
+  }
+
+  if (!pendingLeagueImport) {
+    showMessage(dom.editorMessage, "Keine vorbereitete Liga-Übernahme gefunden. Bitte zuerst „Dieses Event in Liga übernehmen“ klicken.", "error");
+    showMessage(dom.leagueMessage, "Keine vorbereitete Liga-Übernahme gefunden.", "error");
+    return;
+  }
+
+  const now = Date.now();
   const entry = {
     id: `event_${pendingLeagueImport.id}`,
     type: "event",
@@ -1436,8 +1455,8 @@ async function saveLeagueImport() {
     code: pendingLeagueImport.code,
     title: pendingLeagueImport.title,
     quarter: pendingLeagueImport.quarter,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
+    createdAt: getExistingLeagueEntryForEvent(pendingLeagueImport.id)?.createdAt || now,
+    updatedAt: now,
     teams: pendingLeagueImport.teams.map((team) => ({
       name: normalizeLeagueTeamName(team.name),
       place: team.place,
@@ -1446,12 +1465,37 @@ async function saveLeagueImport() {
     }))
   };
 
-  await set(ref(db, `${ROOT_PATH}/league/results/${entry.id}`), entry);
-  pendingLeagueImport = null;
-  dom.leagueImportBox?.classList.add("hidden");
-  updateLeagueActiveEventHint();
-  showMessage(dom.leagueMessage, "Event wurde ins Liga-Ranking übernommen beziehungsweise aktualisiert.", "success");
+  showMessage(dom.editorMessage, "Liga-Eintrag wird gespeichert ...");
+  showMessage(dom.leagueMessage, "Liga-Eintrag wird gespeichert ...");
+
+  try {
+    await set(ref(db, `${ROOT_PATH}/league/results/${entry.id}`), entry);
+
+    // Direkt lokal aktualisieren, damit die Tabelle sofort sichtbar wird,
+    // auch wenn der Firebase-Listener einen Moment braucht.
+    leagueResults = {
+      ...(leagueResults || {}),
+      [entry.id]: entry
+    };
+
+    pendingLeagueImport = null;
+    dom.leagueImportBox?.classList.add("hidden");
+    renderAdminLeague();
+    renderPublicLeague();
+    updateLeagueActiveEventHint();
+
+    showMessage(dom.editorMessage, "Liga-Eintrag gespeichert. Die Ranking-Tabelle wurde aktualisiert.", "success");
+    showMessage(dom.leagueMessage, "Liga-Eintrag gespeichert. Die Ranking-Tabelle wurde aktualisiert.", "success");
+  } catch (error) {
+    const message = `Liga-Eintrag konnte nicht gespeichert werden: ${error.message}`;
+    showMessage(dom.editorMessage, message, "error");
+    showMessage(dom.leagueMessage, message, "error");
+    console.error(error);
+  }
 }
+
+window.quiztSaveLeagueImport = saveLeagueImport;
+
 
 async function saveLeagueSettings() {
   if (!requireAdmin()) return;
@@ -1602,6 +1646,12 @@ dom.adminToggleBtn.addEventListener("click", () => dom.adminPanel.classList.togg
     const target = event.target?.closest?.("#prepareLeagueImportBtn, #prepareLeagueImportEditorBtn");
     if (!target) return;
     runLeagueImportFromButton(event);
+  });
+
+  document.addEventListener("click", (event) => {
+    const target = event.target?.closest?.("#saveLeagueImportBtn");
+    if (!target) return;
+    saveLeagueImport(event);
   });
 }
 
