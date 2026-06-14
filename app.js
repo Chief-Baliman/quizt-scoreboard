@@ -97,6 +97,7 @@ const dom = {
   leagueShowHomeInput: $("#leagueShowHomeInput"),
   saveLeagueSettingsBtn: $("#saveLeagueSettingsBtn"),
   prepareLeagueImportBtn: $("#prepareLeagueImportBtn"),
+  leagueEventSelect: $("#leagueEventSelect"),
   leagueActiveEventHint: $("#leagueActiveEventHint"),
   leagueMessage: $("#leagueMessage"),
   leagueImportBox: $("#leagueImportBox"),
@@ -776,10 +777,11 @@ function selectAdminEvent(eventId) {
   const event = adminEvents[eventId];
   if (!event) return;
   activeEventId = eventId;
+  selectedLeagueEventId = eventId;
   activeDraft = normalizeEvent(structuredClone(event));
   renderAdminEventList();
   renderEditor();
-  updateLeagueActiveEventHint();
+  renderLeagueEventPicker();
 }
 
 function ensureScoresForTeams(event) {
@@ -1304,32 +1306,66 @@ function getExistingLeagueEntryForEvent(eventId) {
   return leagueResults?.[getLeagueEventEntryId(eventId)] || null;
 }
 
-function updateLeagueActiveEventHint() {
-  if (!dom.leagueActiveEventHint) return;
+function getSelectedLeagueEvent() {
+  const eventId = dom.leagueEventSelect?.value || selectedLeagueEventId || activeEventId;
+  if (eventId && adminEvents?.[eventId]) return normalizeEvent(structuredClone(adminEvents[eventId]));
+  if (activeDraft?.id) return normalizeEvent(structuredClone(activeDraft));
+  return null;
+}
 
-  if (!activeDraft) {
-    dom.leagueActiveEventHint.textContent = "Kein Event geöffnet. Öffne links zuerst ein Event, das du übernehmen möchtest.";
-    dom.prepareLeagueImportBtn?.setAttribute("disabled", "disabled");
+function renderLeagueEventPicker() {
+  if (!dom.leagueEventSelect) return;
+
+  const events = Object.values(adminEvents || {})
+    .map(normalizeEvent)
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+  if (!events.length) {
+    dom.leagueEventSelect.innerHTML = `<option value="">Noch keine Events vorhanden</option>`;
+    selectedLeagueEventId = "";
+    updateLeagueActiveEventHint();
     return;
   }
 
-  const existing = getExistingLeagueEntryForEvent(activeDraft.id);
+  const wantedId = selectedLeagueEventId || activeEventId || events[0].id;
+  const selectedExists = events.some((event) => event.id === wantedId);
+  selectedLeagueEventId = selectedExists ? wantedId : events[0].id;
+
+  dom.leagueEventSelect.innerHTML = events.map((event) => `
+    <option value="${escapeHtml(event.id)}">${escapeHtml(event.title || "Quizt Event")} · Code ${escapeHtml(event.code || "----")}${event.finished ? " · beendet" : ""}</option>
+  `).join("");
+
+  dom.leagueEventSelect.value = selectedLeagueEventId;
+  updateLeagueActiveEventHint();
+}
+
+function updateLeagueActiveEventHint() {
+  if (!dom.leagueActiveEventHint) return;
+
+  const event = getSelectedLeagueEvent();
+  if (!event) {
+    dom.leagueActiveEventHint.textContent = "Kein Event ausgewählt. Lege zuerst ein Event an oder wähle ein vorhandenes Event aus.";
+    return;
+  }
+
+  const existing = getExistingLeagueEntryForEvent(event.id);
   const label = existing
     ? `Bereits übernommen am ${formatDate(existing.createdAt)}. Erneute Übernahme überschreibt den vorhandenen Liga-Eintrag.`
     : "Noch nicht ins Liga-Ranking übernommen.";
 
-  dom.leagueActiveEventHint.textContent = `Geöffnetes Event: ${activeDraft.title || "Quizt Event"} · Code ${activeDraft.code || "----"} · ${label}`;
-  dom.prepareLeagueImportBtn?.removeAttribute("disabled");
+  dom.leagueActiveEventHint.textContent = `Ausgewählt: ${event.title || "Quizt Event"} · Code ${event.code || "----"} · ${label}`;
 }
 
 
 function prepareLeagueImport() {
-  if (!activeDraft) {
-    showMessage(dom.leagueMessage, "Bitte links zuerst ein Event öffnen. Das geöffnete Event ist das Event, das übernommen wird.", "error");
+  const selectedEvent = getSelectedLeagueEvent();
+
+  if (!selectedEvent) {
+    showMessage(dom.leagueMessage, "Bitte zuerst ein Event im Liga-Bereich auswählen.", "error");
     return;
   }
 
-  const event = normalizeEvent(structuredClone(activeDraft));
+  const event = normalizeEvent(structuredClone(selectedEvent));
   const ranking = calculateRanking(event);
   if (!ranking.length) {
     showMessage(dom.leagueMessage, "Dieses Event hat noch keine Teams.", "error");
@@ -1358,6 +1394,8 @@ function prepareLeagueImport() {
 
   dom.leagueImportBox?.classList.remove("hidden");
   renderLeagueImportRows();
+  dom.leagueImportBox?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   showMessage(
     dom.leagueMessage,
     existing
@@ -1366,6 +1404,7 @@ function prepareLeagueImport() {
     existing ? "error" : "success"
   );
 }
+
 
 function renderLeagueImportRows() {
   if (!pendingLeagueImport || !dom.leagueImportRows) return;
@@ -1564,6 +1603,10 @@ dom.adminToggleBtn.addEventListener("click", () => dom.adminPanel.classList.togg
     renderPublicLeague();
   });
   dom.saveLeagueSettingsBtn?.addEventListener("click", saveLeagueSettings);
+  dom.leagueEventSelect?.addEventListener("change", () => {
+    selectedLeagueEventId = dom.leagueEventSelect.value;
+    updateLeagueActiveEventHint();
+  });
   dom.prepareLeagueImportBtn?.addEventListener("click", prepareLeagueImport);
   dom.cancelLeagueImportBtn?.addEventListener("click", () => {
     pendingLeagueImport = null;

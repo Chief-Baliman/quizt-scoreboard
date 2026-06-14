@@ -6,7 +6,7 @@
   <title>Quizt Punkteübersicht</title>
   <meta name="description" content="Digitale Punkteübersicht für Quizt Veranstaltungen." />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=37" />
+  <link rel="stylesheet" href="./styles.css?v=38" />
   <script>
     window.QUIZT_MOD_REDIRECT_V31 = true;
     const __quiztMod = new URLSearchParams(location.search).get("mod") || new URLSearchParams(location.search).get("moderator");
@@ -159,11 +159,17 @@
             </label>
           </div>
 
+          <div class="league-event-picker">
+            <label>Event für Liga-Übernahme auswählen
+              <select id="leagueEventSelect"></select>
+            </label>
+            <p id="leagueActiveEventHint" class="small-note muted">Wähle ein Event aus, das du ins Liga-Ranking übernehmen möchtest.</p>
+          </div>
+
           <div class="league-admin-actions">
             <button id="saveLeagueSettingsBtn" class="ghost-btn" type="button">Liga-Einstellungen speichern</button>
-            <button id="prepareLeagueImportBtn" class="primary-btn" type="button">Geöffnetes Event ins Liga-Ranking übernehmen</button>
+            <button id="prepareLeagueImportBtn" class="primary-btn" type="button">Ausgewähltes Event ins Liga-Ranking übernehmen</button>
           </div>
-          <p id="leagueActiveEventHint" class="small-note muted">Kein Event geöffnet.</p>
           <p id="leagueMessage" class="message"></p>
 
           <div id="leagueImportBox" class="league-import-box hidden">
@@ -374,11 +380,17 @@
             </label>
           </div>
 
+          <div class="league-event-picker">
+            <label>Event für Liga-Übernahme auswählen
+              <select id="leagueEventSelect"></select>
+            </label>
+            <p id="leagueActiveEventHint" class="small-note muted">Wähle ein Event aus, das du ins Liga-Ranking übernehmen möchtest.</p>
+          </div>
+
           <div class="league-admin-actions">
             <button id="saveLeagueSettingsBtn" class="ghost-btn" type="button">Liga-Einstellungen speichern</button>
-            <button id="prepareLeagueImportBtn" class="primary-btn" type="button">Geöffnetes Event ins Liga-Ranking übernehmen</button>
+            <button id="prepareLeagueImportBtn" class="primary-btn" type="button">Ausgewähltes Event ins Liga-Ranking übernehmen</button>
           </div>
-          <p id="leagueActiveEventHint" class="small-note muted">Kein Event geöffnet.</p>
           <p id="leagueMessage" class="message"></p>
 
           <div id="leagueImportBox" class="league-import-box hidden">
@@ -433,6 +445,6 @@
     <button id="adminToggleBtn" class="admin-footer-btn" type="button">Admin</button>
   </footer>
 
-  <script type="module" src="./app.js?v=37"></script>
+  <script type="module" src="./app.js?v=38"></script>
 </body>
 </html>
