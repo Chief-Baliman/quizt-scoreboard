@@ -1,4 +1,4 @@
-# Quizt Scoreboard v36 Liga Stabil
+# Quizt Scoreboard v35
 
 Responsive Punkteübersicht für Quizt Events mit Firebase Realtime Database und GitHub Pages.
 
@@ -66,28 +66,22 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
 - Parent-Container blockieren das seitliche Scrollen nicht mehr.
 
 
-## Änderungen: Liga stabil integriert v37
+## Zusatz: Quizt Liga als getrennte Admin-Seite
 
-Basis: bestätigter stabiler Stand v35.
-
-Neu:
-- Liga-Admin-Bereich ergänzt.
-- Getestete Liga-Logik aus `liga-test.html` integriert.
-- Event kann direkt aus dem geöffneten Editor in die Liga übernommen werden.
-- Speichert unter `quiztScoreboard/league/results`.
-- Quartalsranking und All-Time-Ranking werden im Admin angezeigt.
-- Öffentliche Liga-Anzeige auf der Code-Seite kann per Checkbox aktiviert werden.
-- Manuelle Korrekturen sind möglich.
-- Moderator-View wurde nicht verändert.
-- `moderator.html` wurde nicht verändert.
-- Keine Zusatzdateien.
+Dieser Stand basiert auf dem bestätigten stabilen v35-Scoreboard.
 
 Wichtig:
-Firebase Rules müssen den Pfad `quiztScoreboard/league` enthalten.
+- `app.js` bleibt unverändert gegenüber v35.
+- `moderator.html` bleibt unverändert gegenüber v35.
+- Das Haupt-Scoreboard wird nicht mit Liga-Logik vermischt.
+- Neue Datei: `liga.html`.
+- Im Admin-Bereich gibt es nur einen Link `Quizt Liga verwalten`, der `liga.html` öffnet.
+- `liga.html` nutzt die getestete funktionierende Liga-Logik aus `liga-test.html`.
 
-## v37 Liga Stabil
+Upload:
+- kompletten Inhalt ersetzen/hochladen
+- alte Debug-Dateien wie `app-v49.js` oder frühere Teststände entfernen
+- `logo.png` separat behalten, falls vorhanden
 
-- Liga-Listener liest zusätzlich sofort per `get()` aus Firebase.
-- Button „Firebase-Liga prüfen“ nutzt denselben geprüften Ladeweg.
-- Nach Speichern und manueller Korrektur wird die Liga sofort neu aus Firebase geladen.
-- Renderfehler werden sichtbar im Liga-Status angezeigt statt still zu scheitern.
+Firebase:
+- `database.rules.json` enthält den Pfad `quiztScoreboard/league`.

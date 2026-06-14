@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quizt Liga</title>
+  <style>
+    :root {
+      --bg:#050b16; --card:#0b1424; --card2:#101c30; --text:#f4f7ff; --muted:#aeb8cc;
+      --cyan:#28e6ff; --yellow:#ffd84a; --orange:#ff9d22; --line:rgba(40,230,255,.18);
+      --danger:#ff7777; --success:#63f2a5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin:0; min-height:100vh; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 20%, rgba(40,230,255,.12), transparent 28%),
+        radial-gradient(circle at 85% 80%, rgba(255,157,34,.16), transparent 30%),
+        var(--bg);
+      color:var(--text); padding:28px;
+    }
+    .wrap { max-width:1180px; margin:0 auto; }
+    .top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+    h1 { margin:0; font-size:clamp(30px,5vw,54px); line-height:.95; }
+    h2 { margin:0 0 14px; font-size:26px; }
+    h3 { margin:0 0 10px; font-size:20px; }
+    p { color:var(--muted); margin:6px 0 0; }
+    .pill { color:var(--yellow); border:1px solid rgba(255,216,74,.35); padding:6px 10px; border-radius:999px; font-weight:900; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:18px; align-items:start; }
+    .card {
+      background:linear-gradient(180deg, rgba(16,27,48,.95), rgba(6,12,24,.95));
+      border:1px solid var(--line); border-radius:24px; padding:20px; box-shadow:0 22px 50px rgba(0,0,0,.28);
+    }
+    .full { grid-column: 1 / -1; }
+    label { display:grid; gap:7px; color:var(--muted); font-weight:800; margin-bottom:12px; }
+    input, select {
+      width:100%; min-height:48px; border:1px solid rgba(174,184,204,.22); border-radius:14px;
+      background:#050b16; color:var(--text); padding:0 14px; font-size:16px; font-weight:700;
+    }
+    button {
+      border:0; border-radius:14px; padding:14px 18px; font-weight:1000; letter-spacing:.03em; cursor:pointer;
+      background:linear-gradient(135deg, var(--yellow), var(--orange)); color:#07101e; text-transform:uppercase;
+    }
+    button.secondary { background:#082034; color:var(--cyan); border:1px solid rgba(40,230,255,.25); }
+    button.danger { background:rgba(255,119,119,.12); color:#ff9b9b; border:1px solid rgba(255,119,119,.35); }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+    .message { min-height:24px; font-weight:800; color:var(--muted); margin-top:10px; white-space:pre-wrap; }
+    .message.success { color:var(--success); }
+    .message.error { color:var(--danger); }
+    .event-list, .rows, .ranking, .entries { display:grid; gap:10px; }
+    .event-btn {
+      width:100%; text-align:left; background:rgba(255,255,255,.04); color:var(--text); border:1px solid rgba(174,184,204,.14);
+      text-transform:none; letter-spacing:0; display:block;
+    }
+    .event-btn.active { border-color:rgba(255,216,74,.55); box-shadow:0 0 0 2px rgba(255,216,74,.08) inset; }
+    .small { display:block; color:var(--muted); font-size:13px; margin-top:4px; }
+    .preview-row, .rank-row, .entry-row {
+      display:grid; grid-template-columns:50px minmax(0,1fr) 120px 110px; gap:12px; align-items:center;
+      background:rgba(255,255,255,.045); border-radius:16px; padding:12px; border:1px solid rgba(174,184,204,.09);
+    }
+    .rank-row { grid-template-columns:48px minmax(0,1fr) 100px 110px; }
+    .entry-row { grid-template-columns:minmax(0,1fr) auto; }
+    .place { color:var(--orange); font-size:24px; font-weight:1000; }
+    .points { color:var(--yellow); font-size:22px; font-weight:1000; text-align:right; }
+    .muted { color:var(--muted); }
+    .status {
+      background:rgba(40,230,255,.08); border:1px solid rgba(40,230,255,.22); color:var(--cyan);
+      border-radius:16px; padding:12px 14px; font-weight:900; margin-bottom:16px;
+    }
+    .hidden { display:none !important; }
+    .inline { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+    .inline label { flex:1 1 220px; }
+    .footer-note { margin-top:18px; color:var(--muted); font-size:13px; }
+    @media (max-width:800px) {
+      body { padding:14px; }
+      .grid { grid-template-columns:1fr; }
+      .preview-row, .rank-row { grid-template-columns:36px minmax(0,1fr); }
+      .preview-row label, .preview-row .points, .rank-row .points { grid-column:2; text-align:left; }
+      .entry-row { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top">
+      <div>
+        <h1>Quizt Liga</h1>
+        <p>Offizieller Liga-Bereich. Das Haupt-Scoreboard bleibt technisch getrennt und geschützt.</p>
+      </div>
+      <div class="pill">liga v1</div>
+    </div>
+
+    <div id="status" class="status">HTML geladen. Warte auf JavaScript ...</div>
+
+    <section id="loginCard" class="card">
+      <h2>Admin Login</h2>
+      <p>Nutze denselben Firebase-Login wie im Scoreboard.</p>
+      <div class="inline">
+        <label>E-Mail
+          <input id="email" type="email" autocomplete="username" />
+        </label>
+        <label>Passwort
+          <input id="password" type="password" autocomplete="current-password" />
+        </label>
+      </div>
+      <div class="actions">
+        <button id="loginBtn">Einloggen</button>
+      </div>
+      <div id="loginMsg" class="message"></div>
+    </section>
+
+    <section id="app" class="grid hidden">
+      <section class="card">
+        <h2>1. Event auswählen</h2>
+        <p>Lädt aus <code>quiztScoreboard/adminEvents</code>.</p>
+        <div class="actions">
+          <button id="reloadEventsBtn" class="secondary">Events neu laden</button>
+          <button id="logoutBtn" class="secondary">Ausloggen</button>
+        </div>
+        <div id="eventsMsg" class="message"></div>
+        <div id="eventList" class="event-list"></div>
+      </section>
+
+      <section class="card">
+        <h2>2. Übernahme prüfen</h2>
+        <p id="selectedInfo">Kein Event ausgewählt.</p>
+        <div id="previewRows" class="rows"></div>
+        <div class="actions">
+          <button id="saveImportBtn" disabled>Event in Liga speichern</button>
+        </div>
+        <div id="saveMsg" class="message"></div>
+      </section>
+
+      <section class="card">
+        <h2>Manuelle Korrektur</h2>
+        <div class="inline">
+          <label>Teamname
+            <input id="manualName" placeholder="Teamname" />
+          </label>
+          <label>Punkte
+            <input id="manualPoints" type="number" step="1" placeholder="z. B. 2 oder -2" />
+          </label>
+        </div>
+        <label>Notiz
+          <input id="manualNote" placeholder="z. B. Korrektur nach Event" />
+        </label>
+        <button id="manualSaveBtn" class="secondary">Korrektur speichern</button>
+        <div id="manualMsg" class="message"></div>
+      </section>
+
+      <section class="card">
+        <h2>Firebase Prüfung</h2>
+        <p>Direktprüfung des Liga-Pfads.</p>
+        <div class="actions">
+          <button id="checkFirebaseBtn" class="secondary">Firebase-Liga prüfen</button>
+          <button id="clearLocalBtn" class="danger">Lokalen Fallback löschen</button>
+        </div>
+        <div id="firebaseMsg" class="message"></div>
+      </section>
+
+      <section class="card">
+        <h2>Aktuelles Quartal</h2>
+        <div id="quarterRanking" class="ranking"></div>
+      </section>
+
+      <section class="card">
+        <h2>All-Time</h2>
+        <div id="allTimeRanking" class="ranking"></div>
+      </section>
+
+      <section class="card full">
+        <h2>Gespeicherte Liga-Einträge</h2>
+        <div id="entryList" class="entries"></div>
+      </section>
+    </section>
+
+    <div class="footer-note">
+      Dieser Liga-Bereich schreibt ausschließlich unter <code>quiztScoreboard/league/results</code> und liest <code>quiztScoreboard/adminEvents</code>.
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { getDatabase, ref, get, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA5kq-HiCkVroQLCwwVc24C8XYPJTZvegM",
+      authDomain: "queue-tracker-3fa3c.firebaseapp.com",
+      databaseURL: "https://queue-tracker-3fa3c-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "queue-tracker-3fa3c",
+      storageBucket: "queue-tracker-3fa3c.firebasestorage.app",
+      messagingSenderId: "132132188124",
+      appId: "1:132132188124:web:ecc130f7ee7ac9d61be919",
+      measurementId: "G-3QBWJHGDXG"
+    };
+
+    const ADMIN_UID = "FMZW16NbeQXPKmVE50BcnbRYI2o1";
+    const ROOT_PATH = "quiztScoreboard";
+    const POINTS = [20, 16, 12, 9, 6, 4, 2];
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const $ = (id) => document.getElementById(id);
+    const state = {
+      user: null,
+      events: {},
+      selectedEventId: "",
+      pendingTeams: [],
+      leagueResults: {}
+    };
+
+    const nodes = {
+      status: $("status"),
+      loginCard: $("loginCard"),
+      app: $("app"),
+      email: $("email"),
+      password: $("password"),
+      loginBtn: $("loginBtn"),
+      logoutBtn: $("logoutBtn"),
+      loginMsg: $("loginMsg"),
+      reloadEventsBtn: $("reloadEventsBtn"),
+      eventsMsg: $("eventsMsg"),
+      eventList: $("eventList"),
+      selectedInfo: $("selectedInfo"),
+      previewRows: $("previewRows"),
+      saveImportBtn: $("saveImportBtn"),
+      saveMsg: $("saveMsg"),
+      manualName: $("manualName"),
+      manualPoints: $("manualPoints"),
+      manualNote: $("manualNote"),
+      manualSaveBtn: $("manualSaveBtn"),
+      manualMsg: $("manualMsg"),
+      checkFirebaseBtn: $("checkFirebaseBtn"),
+      clearLocalBtn: $("clearLocalBtn"),
+      firebaseMsg: $("firebaseMsg"),
+      quarterRanking: $("quarterRanking"),
+      allTimeRanking: $("allTimeRanking"),
+      entryList: $("entryList")
+    };
+
+    function setStatus(text) { nodes.status.textContent = text; }
+    function msg(node, text, type = "") {
+      node.textContent = text || "";
+      node.className = `message ${type}`.trim();
+    }
+    function esc(value = "") {
+      return String(value)
+        .replaceAll("&", "&amp;").replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+    }
+    function score(value) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    function qKey(date = new Date()) {
+      return `${date.getFullYear()}-Q${Math.floor(date.getMonth() / 3) + 1}`;
+    }
+    function fmt(value) {
+      if (!value) return "ohne Datum";
+      return new Intl.DateTimeFormat("de-DE", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" }).format(new Date(value));
+    }
+    function uid() {
+      return crypto.randomUUID ? crypto.randomUUID() : `id_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    }
+    function normalizeEvent(event) {
+      const clean = { ...(event || {}) };
+      clean.teams = Array.isArray(clean.teams) ? clean.teams : [];
+      clean.rounds = Array.isArray(clean.rounds) ? clean.rounds : [];
+      return clean;
+    }
+    function calculateRanking(event) {
+      const clean = normalizeEvent(event);
+      return clean.teams.map(team => {
+        const total = clean.rounds.reduce((sum, round) => sum + score(round?.scores?.[team.id]), 0);
+        return { ...team, total };
+      }).sort((a,b) => b.total - a.total || String(a.name).localeCompare(String(b.name), "de"));
+    }
+    function leaguePoints(place) { return POINTS[place - 1] ?? 1; }
+    function leagueEntryId(eventId) { return `event_${eventId}`; }
+
+    function normalizeLeagueResults(value) {
+      if (!value) return {};
+      if (Array.isArray(value)) {
+        return Object.fromEntries(value.filter(Boolean).map((entry, i) => [entry.id || `legacy_${i}`, entry]));
+      }
+      return value;
+    }
+    function teamsOf(entry) {
+      if (Array.isArray(entry?.teams)) return entry.teams;
+      if (entry?.teams && typeof entry.teams === "object") return Object.values(entry.teams);
+      return [];
+    }
+
+    function computeTables() {
+      const quarterNow = qKey();
+      const quarter = new Map();
+      const all = new Map();
+
+      Object.values(state.leagueResults || {}).forEach(entry => {
+        teamsOf(entry).forEach(team => {
+          const name = String(team.name || "").trim();
+          const points = score(team.points);
+          if (!name || !points) return;
+
+          const allRow = all.get(name) || { name, points: 0, events: 0 };
+          allRow.points += points;
+          allRow.events += 1;
+          all.set(name, allRow);
+
+          if ((entry.quarter || "") === quarterNow) {
+            const qRow = quarter.get(name) || { name, points: 0, events: 0 };
+            qRow.points += points;
+            qRow.events += 1;
+            quarter.set(name, qRow);
+          }
+        });
+      });
+
+      const sort = rows => [...rows.values()].sort((a,b) => b.points - a.points || a.name.localeCompare(b.name, "de"));
+      return { quarter: sort(quarter), all: sort(all), quarterNow };
+    }
+
+    function renderRanking(target, rows) {
+      if (!rows.length) {
+        target.innerHTML = "<p class='muted'>Noch keine Einträge.</p>";
+        return;
+      }
+      target.innerHTML = rows.map((row, index) => `
+        <div class="rank-row">
+          <div class="place">${index + 1}.</div>
+          <strong>${esc(row.name)}</strong>
+          <div class="points">${row.points}</div>
+          <span class="small">${row.events} ${row.events === 1 ? "Eintrag" : "Einträge"}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderEntries() {
+      const entries = Object.values(state.leagueResults || {}).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+      if (!entries.length) {
+        nodes.entryList.innerHTML = "<p class='muted'>Noch keine gespeicherten Liga-Einträge.</p>";
+        return;
+      }
+      nodes.entryList.innerHTML = entries.map(entry => `
+        <div class="entry-row">
+          <div>
+            <strong>${esc(entry.title || "Liga-Eintrag")}</strong>
+            <span class="small">${esc(entry.quarter || "")} · ${fmt(entry.createdAt)} · ${esc(entry.type || "event")}</span>
+            <span class="small">${teamsOf(entry).map(t => `${esc(t.name)}: ${score(t.points)}`).join(" · ")}</span>
+          </div>
+          <button class="danger" data-delete-entry="${esc(entry.id)}">Löschen</button>
+        </div>
+      `).join("");
+      nodes.entryList.querySelectorAll("[data-delete-entry]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.deleteEntry;
+          await remove(ref(db, `${ROOT_PATH}/league/results/${id}`));
+          msg(nodes.firebaseMsg, `Eintrag ${id} gelöscht.`, "success");
+        });
+      });
+    }
+
+    function renderAll() {
+      const tables = computeTables();
+      renderRanking(nodes.quarterRanking, tables.quarter);
+      renderRanking(nodes.allTimeRanking, tables.all);
+      renderEntries();
+      setStatus(`JavaScript läuft · Liga-Einträge geladen: ${Object.keys(state.leagueResults || {}).length} · Aktuelles Quartal: ${tables.quarterNow}`);
+    }
+
+    function renderEvents() {
+      const events = Object.entries(state.events || {})
+        .map(([id, event]) => ({ id, ...normalizeEvent(event) }))
+        .sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      if (!events.length) {
+        nodes.eventList.innerHTML = "<p class='muted'>Keine Events gefunden.</p>";
+        return;
+      }
+      nodes.eventList.innerHTML = events.map(event => `
+        <button class="event-btn ${event.id === state.selectedEventId ? "active" : ""}" data-event-id="${esc(event.id)}">
+          <strong>${esc(event.title || "Quizt Event")}</strong>
+          <span class="small">Code ${esc(event.code || "----")} · ${event.finished ? "Beendet · " : ""}${fmt(event.updatedAt)}</span>
+        </button>
+      `).join("");
+      nodes.eventList.querySelectorAll("[data-event-id]").forEach(btn => {
+        btn.addEventListener("click", () => selectEvent(btn.dataset.eventId));
+      });
+    }
+
+    function selectEvent(id) {
+      state.selectedEventId = id;
+      const event = normalizeEvent(state.events[id]);
+      const ranking = calculateRanking(event);
+      const existing = state.leagueResults[leagueEntryId(id)];
+      nodes.selectedInfo.innerHTML = `<strong>${esc(event.title || "Quizt Event")}</strong><br><span class="small">Code ${esc(event.code || "----")} · ${existing ? "bereits gespeichert, Speichern überschreibt" : "noch nicht gespeichert"}</span>`;
+
+      state.pendingTeams = ranking.map((team, index) => {
+        const place = index + 1;
+        const oldTeam = existing ? teamsOf(existing).find(t => t.place === place || String(t.name) === String(team.name)) : null;
+        return {
+          originalName: team.name || `Team ${place}`,
+          name: oldTeam?.name || team.name || `Team ${place}`,
+          place,
+          quizPoints: team.total,
+          points: oldTeam ? score(oldTeam.points) : leaguePoints(place)
+        };
+      });
+
+      nodes.previewRows.innerHTML = state.pendingTeams.map((team, index) => `
+        <div class="preview-row">
+          <div class="place">${team.place}.</div>
+          <div>
+            <strong>${esc(team.originalName)}</strong>
+            <span class="small">${team.quizPoints} Quizpunkte</span>
+          </div>
+          <label>Liga-Team
+            <input data-pending-name="${index}" value="${esc(team.name)}" />
+          </label>
+          <label>Punkte
+            <input data-pending-points="${index}" type="number" step="1" value="${team.points}" />
+          </label>
+        </div>
+      `).join("");
+
+      nodes.previewRows.querySelectorAll("[data-pending-name]").forEach(input => {
+        input.addEventListener("input", () => state.pendingTeams[Number(input.dataset.pendingName)].name = input.value);
+      });
+      nodes.previewRows.querySelectorAll("[data-pending-points]").forEach(input => {
+        input.addEventListener("input", () => state.pendingTeams[Number(input.dataset.pendingPoints)].points = score(input.value));
+      });
+
+      nodes.saveImportBtn.disabled = !ranking.length;
+      msg(nodes.saveMsg, ranking.length ? "Übernahme vorbereitet. Jetzt speichern." : "Dieses Event hat keine Teams.", ranking.length ? "success" : "error");
+      renderEvents();
+    }
+
+    async function loadEvents() {
+      msg(nodes.eventsMsg, "Events werden geladen ...");
+      const snap = await get(ref(db, `${ROOT_PATH}/adminEvents`));
+      state.events = snap.val() || {};
+      renderEvents();
+      msg(nodes.eventsMsg, `${Object.keys(state.events).length} Events geladen.`, "success");
+    }
+
+    function listenLeague() {
+      onValue(ref(db, `${ROOT_PATH}/league/results`), (snap) => {
+        state.leagueResults = normalizeLeagueResults(snap.val());
+        renderAll();
+        if (state.selectedEventId) selectEvent(state.selectedEventId);
+      }, (error) => {
+        setStatus(`Firebase-Lesefehler: ${error.message}`);
+        msg(nodes.firebaseMsg, `Firebase-Lesefehler: ${error.message}`, "error");
+      });
+    }
+
+    async function saveImport() {
+      if (!state.selectedEventId || !state.pendingTeams.length) {
+        msg(nodes.saveMsg, "Kein Event vorbereitet.", "error");
+        return;
+      }
+      const event = normalizeEvent(state.events[state.selectedEventId]);
+      const existing = state.leagueResults[leagueEntryId(state.selectedEventId)];
+      const now = Date.now();
+      const entry = {
+        id: leagueEntryId(state.selectedEventId),
+        type: "event",
+        eventId: state.selectedEventId,
+        code: event.code || "",
+        title: event.title || "Quizt Event",
+        quarter: qKey(new Date(event.updatedAt || now)),
+        createdAt: existing?.createdAt || now,
+        updatedAt: now,
+        teams: state.pendingTeams.map(t => ({
+          name: String(t.name || "").trim() || t.originalName,
+          place: t.place,
+          quizPoints: t.quizPoints,
+          points: score(t.points)
+        }))
+      };
+
+      msg(nodes.saveMsg, "Speichere Liga-Eintrag ...");
+      await set(ref(db, `${ROOT_PATH}/league/results/${entry.id}`), entry);
+      msg(nodes.saveMsg, "Liga-Eintrag gespeichert.", "success");
+      state.leagueResults[entry.id] = entry;
+      renderAll();
+      selectEvent(state.selectedEventId);
+    }
+
+    async function saveManual() {
+      const name = String(nodes.manualName.value || "").trim();
+      const points = score(nodes.manualPoints.value);
+      const note = String(nodes.manualNote.value || "").trim();
+      if (!name || !points) {
+        msg(nodes.manualMsg, "Bitte Teamname und Punkte eintragen.", "error");
+        return;
+      }
+      const id = `manual_${uid()}`;
+      const entry = {
+        id,
+        type: "manual",
+        title: note || "Manuelle Korrektur",
+        quarter: qKey(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        teams: [{ name, points }]
+      };
+      await set(ref(db, `${ROOT_PATH}/league/results/${id}`), entry);
+      nodes.manualName.value = "";
+      nodes.manualPoints.value = "";
+      nodes.manualNote.value = "";
+      msg(nodes.manualMsg, "Korrektur gespeichert.", "success");
+    }
+
+    async function checkFirebase() {
+      msg(nodes.firebaseMsg, "Firebase wird geprüft ...");
+      const snap = await get(ref(db, `${ROOT_PATH}/league/results`));
+      const value = normalizeLeagueResults(snap.val());
+      state.leagueResults = value;
+      renderAll();
+      msg(nodes.firebaseMsg, `Firebase-Prüfung: ${Object.keys(value).length} Liga-Einträge gefunden.`, Object.keys(value).length ? "success" : "error");
+    }
+
+    nodes.loginBtn.addEventListener("click", async () => {
+      try {
+        msg(nodes.loginMsg, "Login läuft ...");
+        await signInWithEmailAndPassword(auth, nodes.email.value.trim(), nodes.password.value);
+      } catch (error) {
+        msg(nodes.loginMsg, `Login fehlgeschlagen: ${error.message}`, "error");
+      }
+    });
+    nodes.logoutBtn.addEventListener("click", () => signOut(auth));
+    nodes.reloadEventsBtn.addEventListener("click", loadEvents);
+    nodes.saveImportBtn.addEventListener("click", saveImport);
+    nodes.manualSaveBtn.addEventListener("click", saveManual);
+    nodes.checkFirebaseBtn.addEventListener("click", checkFirebase);
+    nodes.clearLocalBtn.addEventListener("click", () => {
+      msg(nodes.firebaseMsg, "Diese Testdatei nutzt keinen lokalen Fallback. Nichts zu löschen.", "success");
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      state.user = user;
+      if (user && user.uid === ADMIN_UID) {
+        nodes.loginCard.classList.add("hidden");
+        nodes.app.classList.remove("hidden");
+        msg(nodes.loginMsg, "");
+        setStatus("Eingeloggt. Lade Events und Liga ...");
+        listenLeague();
+        await loadEvents();
+        await checkFirebase();
+        return;
+      }
+      nodes.loginCard.classList.remove("hidden");
+      nodes.app.classList.add("hidden");
+      if (user && user.uid !== ADMIN_UID) {
+        msg(nodes.loginMsg, "Dieser Login ist nicht als Admin freigegeben.", "error");
+        await signOut(auth);
+      } else {
+        setStatus("JavaScript läuft. Bitte einloggen.");
+      }
+    });
+
+    setStatus("JavaScript läuft. Firebase initialisiert.");
+  </script>
+</body>
+</html>
