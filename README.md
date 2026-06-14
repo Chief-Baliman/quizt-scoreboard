@@ -1,4 +1,4 @@
-# Quizt Scoreboard v51
+# Quizt Scoreboard v52
 
 Responsive Punkteübersicht für Quizt Events mit Firebase Realtime Database und GitHub Pages.
 
@@ -194,3 +194,12 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
 - Es gibt keine zusätzliche `app-vXX.js`.
 - Der alte Script-Tag am Ende der Datei wurde entfernt, damit es keine Dopplung gibt.
 - Wenn `document.querySelectorAll('script').length` weiterhin `0` ergibt, ist die veröffentlichte `index.html` nicht vollständig aus dieser Version ersetzt worden.
+
+
+## Änderungen in v52
+
+- Kein Dateimüll, weiterhin nur `app.js`.
+- Script-Tag steht wieder unten vor `</body>`, damit die DOM-Elemente sicher existieren.
+- App-Start läuft zusätzlich über `DOMContentLoaded`-Fallback.
+- Der Liga-Status wird erst beim App-Start gesetzt, nicht mehr zu früh im `<head>`.
+- Die `logo.png`-404-Meldung ist nicht fatal; sie bedeutet nur, dass keine Logo-Datei im Repo gefunden wurde.
