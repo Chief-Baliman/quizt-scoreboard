@@ -6,7 +6,7 @@
   <title>Quizt Punkteübersicht</title>
   <meta name="description" content="Digitale Punkteübersicht für Quizt Veranstaltungen." />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=44" />
+  <link rel="stylesheet" href="./styles.css?v=45" />
   <script>
     window.QUIZT_MOD_REDIRECT_V31 = true;
     const __quiztMod = new URLSearchParams(location.search).get("mod") || new URLSearchParams(location.search).get("moderator");
@@ -181,6 +181,8 @@
             </div>
             <button id="addManualLeagueEntryBtn" class="ghost-btn" type="button">Korrektur buchen</button>
           </div>
+
+          <div id="leagueLastSaveBox" class="league-last-save-box hidden"></div>
 
           <div class="league-rankings-grid">
             <section>
@@ -398,6 +400,8 @@
             <button id="addManualLeagueEntryBtn" class="ghost-btn" type="button">Korrektur buchen</button>
           </div>
 
+          <div id="leagueLastSaveBox" class="league-last-save-box hidden"></div>
+
           <div class="league-rankings-grid">
             <section>
               <h4>Aktuelles Quartal</h4>
@@ -424,6 +428,6 @@
     <button id="adminToggleBtn" class="admin-footer-btn" type="button">Admin</button>
   </footer>
 
-  <script type="module" src="./app.js?v=44"></script>
+  <script type="module" src="./app.js?v=45"></script>
 </body>
 </html>

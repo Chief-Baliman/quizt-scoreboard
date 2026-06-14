@@ -110,6 +110,7 @@ const dom = {
   addManualLeagueEntryBtn: $("#addManualLeagueEntryBtn"),
   adminLeagueQuarter: $("#adminLeagueQuarter"),
   adminLeagueAllTime: $("#adminLeagueAllTime"),
+  leagueLastSaveBox: $("#leagueLastSaveBox"),
   leagueResultsList: $("#leagueResultsList")
 };
 
@@ -125,6 +126,7 @@ let leagueSettings = { enabled: false, showOnHome: false };
 let leagueResults = {};
 let pendingLeagueImport = null;
 let publicLeagueMode = "quarter";
+let lastSavedLeagueEntry = null;
 
 
 function setupBrandLogo() {
@@ -1176,6 +1178,33 @@ function normalizeLeagueTeamName(name = "") {
   return String(name || "").trim().replace(/\s+/g, " ") || "Unbenanntes Team";
 }
 
+function getRenderableLeagueResults() {
+  const merged = { ...(leagueResults || {}) };
+  if (lastSavedLeagueEntry?.id && !merged[lastSavedLeagueEntry.id]) {
+    merged[lastSavedLeagueEntry.id] = lastSavedLeagueEntry;
+  }
+  return merged;
+}
+
+function renderLastSavedLeagueEntry(entry) {
+  if (!dom.leagueLastSaveBox) return;
+
+  if (!entry) {
+    dom.leagueLastSaveBox.classList.add("hidden");
+    dom.leagueLastSaveBox.innerHTML = "";
+    return;
+  }
+
+  dom.leagueLastSaveBox.classList.remove("hidden");
+  dom.leagueLastSaveBox.innerHTML = `
+    <strong>Zuletzt gespeicherter Liga-Eintrag</strong>
+    <span>${escapeHtml(entry.title || "Quizt Event")} · ${escapeHtml(entry.quarter || "")}</span>
+    <div>
+      ${(entry.teams || []).map((team) => `<b>${escapeHtml(team.name)}: ${scoreNumber(team.points)}</b>`).join("")}
+    </div>
+  `;
+}
+
 function calculateLeagueTables(results = leagueResults) {
   const quarterKey = getQuarterKey();
   const allTime = new Map();
@@ -1226,7 +1255,7 @@ function renderLeagueList(target, rows, emptyText = "Noch keine Liga-Punkte vorh
 
 function renderPublicLeague() {
   if (!dom.publicLeagueBox || !dom.publicLeagueList) return;
-  const tables = calculateLeagueTables();
+  const tables = calculateLeagueTables(getRenderableLeagueResults());
 
   const visible = Boolean(leagueSettings.enabled && leagueSettings.showOnHome);
   dom.publicLeagueBox.classList.toggle("hidden", !visible);
@@ -1243,13 +1272,15 @@ function renderAdminLeague() {
   if (dom.leagueEnabledInput) dom.leagueEnabledInput.checked = Boolean(leagueSettings.enabled);
   if (dom.leagueShowHomeInput) dom.leagueShowHomeInput.checked = Boolean(leagueSettings.showOnHome);
 
-  const tables = calculateLeagueTables();
+  const tables = calculateLeagueTables(getRenderableLeagueResults());
   renderLeagueList(dom.adminLeagueQuarter, tables.quarter);
   renderLeagueList(dom.adminLeagueAllTime, tables.allTime);
 
   updateLeagueActiveEventHint();
 
-  const results = Object.values(leagueResults || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  renderLastSavedLeagueEntry(lastSavedLeagueEntry);
+
+  const results = Object.values(getRenderableLeagueResults()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
   if (!dom.leagueResultsList) return;
   if (!results.length) {
@@ -1477,6 +1508,7 @@ async function saveLeagueImport(event) {
       ...(leagueResults || {}),
       [entry.id]: entry
     };
+    lastSavedLeagueEntry = entry;
 
     pendingLeagueImport = null;
     dom.leagueImportBox?.classList.add("hidden");
@@ -1484,8 +1516,14 @@ async function saveLeagueImport(event) {
     renderPublicLeague();
     updateLeagueActiveEventHint();
 
-    showMessage(dom.editorMessage, "Liga-Eintrag gespeichert. Die Ranking-Tabelle wurde aktualisiert.", "success");
-    showMessage(dom.leagueMessage, "Liga-Eintrag gespeichert. Die Ranking-Tabelle wurde aktualisiert.", "success");
+    dom.leagueLastSaveBox?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    const visibleHint = leagueSettings.enabled && leagueSettings.showOnHome
+      ? "Die öffentliche Liga-Anzeige ist aktiv."
+      : "Hinweis: Für die öffentliche Anzeige müssen „Liga aktiv“ und „Auf Code-Seite anzeigen“ eingeschaltet und gespeichert sein.";
+
+    showMessage(dom.editorMessage, `Liga-Eintrag gespeichert. ${visibleHint}`, "success");
+    showMessage(dom.leagueMessage, `Liga-Eintrag gespeichert. ${visibleHint}`, "success");
   } catch (error) {
     const message = `Liga-Eintrag konnte nicht gespeichert werden: ${error.message}`;
     showMessage(dom.editorMessage, message, "error");

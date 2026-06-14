@@ -3343,3 +3343,31 @@ select {
 .editor-league-import h4 {
   color: var(--yellow);
 }
+
+
+/* V45: sichtbare Liga-Speicherbestätigung */
+.league-last-save-box {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 216, 74, 0.38);
+  background: rgba(255, 216, 74, 0.10);
+  display: grid;
+  gap: 8px;
+}
+
+.league-last-save-box strong {
+  color: var(--yellow);
+}
+
+.league-last-save-box div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.league-last-save-box b {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(2, 7, 15, 0.55);
+}
