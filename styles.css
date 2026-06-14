@@ -3329,3 +3329,17 @@ select {
   opacity: 1;
   cursor: pointer;
 }
+
+
+/* V41: Liga-Übernahme direkt im geöffneten Event sichtbar */
+.editor-league-import {
+  margin: 18px 0 22px;
+  border-color: rgba(255, 216, 74, 0.36);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 216, 74, 0.10), transparent 34%),
+    rgba(2,7,15,0.72);
+}
+
+.editor-league-import h4 {
+  color: var(--yellow);
+}

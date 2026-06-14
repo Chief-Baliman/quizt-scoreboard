@@ -1325,6 +1325,7 @@ function updateLeagueActiveEventHint() {
 
 function prepareLeagueImport() {
   if (!activeDraft) {
+    showMessage(dom.editorMessage, "Bitte links zuerst ein Event öffnen.", "error");
     showMessage(dom.leagueMessage, "Bitte links zuerst ein Event öffnen. Das geöffnete Event ist das Event, das übernommen wird.", "error");
     return;
   }
@@ -1358,7 +1359,8 @@ function prepareLeagueImport() {
 
   dom.leagueImportBox?.classList.remove("hidden");
   renderLeagueImportRows();
-  dom.leagueImportBox?.scrollIntoView({ behavior: "smooth", block: "start" });
+  dom.leagueImportBox?.scrollIntoView({ behavior: "smooth", block: "center" });
+  showMessage(dom.editorMessage, "Liga-Übernahme vorbereitet. Bitte prüfe die Liste direkt hier im Event.", "success");
   showMessage(
     dom.leagueMessage,
     existing
@@ -1571,6 +1573,7 @@ dom.adminToggleBtn.addEventListener("click", () => dom.adminPanel.classList.togg
     pendingLeagueImport = null;
     dom.leagueImportBox?.classList.add("hidden");
     showMessage(dom.leagueMessage, "");
+    showMessage(dom.editorMessage, "");
   });
   dom.saveLeagueImportBtn?.addEventListener("click", saveLeagueImport);
   dom.addManualLeagueEntryBtn?.addEventListener("click", addManualLeagueEntry);

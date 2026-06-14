@@ -6,7 +6,7 @@
   <title>Quizt Punkteübersicht</title>
   <meta name="description" content="Digitale Punkteübersicht für Quizt Veranstaltungen." />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=40" />
+  <link rel="stylesheet" href="./styles.css?v=41" />
   <script>
     window.QUIZT_MOD_REDIRECT_V31 = true;
     const __quiztMod = new URLSearchParams(location.search).get("mod") || new URLSearchParams(location.search).get("moderator");
@@ -166,16 +166,6 @@
           <p id="leagueActiveEventHint" class="small-note muted">Kein Event geöffnet.</p>
           <p id="leagueMessage" class="message"></p>
 
-          <div id="leagueImportBox" class="league-import-box hidden">
-            <h4>Event-Übernahme prüfen</h4>
-            <p class="muted small-note">Teamnamen kannst du vor dem Speichern korrigieren oder vereinheitlichen. Punkte können hier ebenfalls angepasst werden.</p>
-            <div id="leagueImportRows" class="league-import-rows"></div>
-            <div class="league-admin-actions">
-              <button id="cancelLeagueImportBtn" class="ghost-btn" type="button">Abbrechen</button>
-              <button id="saveLeagueImportBtn" class="primary-btn" type="button">Übernahme speichern</button>
-            </div>
-          </div>
-
           <div class="league-manual-box">
             <h4>Manuelle Korrektur</h4>
             <div class="form-grid">
@@ -275,6 +265,16 @@
                 <button id="saveDraftBtn" class="ghost-btn" type="button">Entwurf speichern</button>
                 <button id="publishBtn" class="primary-btn" type="button">Änderungen veröffentlichen</button>
                 <button id="prepareLeagueImportEditorBtn" class="ghost-btn league-editor-btn" type="button">Dieses Event in Liga übernehmen</button>
+              </div>
+            </div>
+
+            <div id="leagueImportBox" class="league-import-box editor-league-import hidden">
+              <h4>Event-Übernahme ins Liga-Ranking prüfen</h4>
+              <p class="muted small-note">Dieses Feld gehört zum aktuell geöffneten Event. Teamnamen und Liga-Punkte kannst du vor dem Speichern korrigieren.</p>
+              <div id="leagueImportRows" class="league-import-rows"></div>
+              <div class="league-admin-actions">
+                <button id="cancelLeagueImportBtn" class="ghost-btn" type="button">Abbrechen</button>
+                <button id="saveLeagueImportBtn" class="primary-btn" type="button">Übernahme speichern</button>
               </div>
             </div>
 
@@ -382,16 +382,6 @@
           <p id="leagueActiveEventHint" class="small-note muted">Kein Event geöffnet.</p>
           <p id="leagueMessage" class="message"></p>
 
-          <div id="leagueImportBox" class="league-import-box hidden">
-            <h4>Event-Übernahme prüfen</h4>
-            <p class="muted small-note">Teamnamen kannst du vor dem Speichern korrigieren oder vereinheitlichen. Punkte können hier ebenfalls angepasst werden.</p>
-            <div id="leagueImportRows" class="league-import-rows"></div>
-            <div class="league-admin-actions">
-              <button id="cancelLeagueImportBtn" class="ghost-btn" type="button">Abbrechen</button>
-              <button id="saveLeagueImportBtn" class="primary-btn" type="button">Übernahme speichern</button>
-            </div>
-          </div>
-
           <div class="league-manual-box">
             <h4>Manuelle Korrektur</h4>
             <div class="form-grid">
@@ -434,6 +424,6 @@
     <button id="adminToggleBtn" class="admin-footer-btn" type="button">Admin</button>
   </footer>
 
-  <script type="module" src="./app.js?v=40"></script>
+  <script type="module" src="./app.js?v=41"></script>
 </body>
 </html>
