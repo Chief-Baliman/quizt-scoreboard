@@ -159,3 +159,9 @@ Firebase:
 - Moderator-Toolbar enthält jetzt nur noch:
   - Moderation
   - Liga
+
+
+## v10 Moderator-Liga
+
+- In der Liga-Ansicht des Moderator-Modus wird jetzt die Punktevergabe erklärt:
+  1. Platz 20, 2. Platz 16, 3. Platz 12, 4. Platz 9, 5. Platz 6, 6. Platz 4, 7. Platz 2, ab Platz 8 je 1 Punkt.

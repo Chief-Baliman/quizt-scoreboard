@@ -232,12 +232,54 @@
       margin: 10px 0 0;
     }
 
+
+    .mod-league-points-info {
+      margin: 14px 0 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 216, 74, 0.22);
+      background: rgba(255, 216, 74, 0.075);
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .mod-league-points-info strong {
+      color: var(--yellow);
+    }
+    .mod-league-points-info span {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--text);
+      font-weight: 900;
+      line-height: 1.45;
+    }
+
     @media (max-width: 760px) {
       .mod-shell { width: min(100% - 20px, 1120px); }
       .mod-card { padding: 16px 12px; }
       .mod-rank-row { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; padding: 12px; }
       .mod-rank-row span { width: 36px; height: 36px; }
       .mod-rounds { padding: 14px; }
+    }
+
+
+    .mod-league-points-info {
+      margin: 14px 0 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 216, 74, 0.22);
+      background: rgba(255, 216, 74, 0.075);
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .mod-league-points-info strong {
+      color: var(--yellow);
+    }
+    .mod-league-points-info span {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--text);
+      font-weight: 900;
+      line-height: 1.45;
     }
 
     @media (max-width: 760px) {
@@ -428,6 +470,27 @@
       width: 120px;
       text-align: center;
     }
+
+    .mod-league-points-info {
+      margin: 14px 0 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 216, 74, 0.22);
+      background: rgba(255, 216, 74, 0.075);
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .mod-league-points-info strong {
+      color: var(--yellow);
+    }
+    .mod-league-points-info span {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--text);
+      font-weight: 900;
+      line-height: 1.45;
+    }
+
     @media (max-width: 760px) {
       .mod-ranking {
         overflow: visible;
@@ -564,6 +627,27 @@
     .mod-table-scroll-note {
       display: block !important;
     }
+
+    .mod-league-points-info {
+      margin: 14px 0 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 216, 74, 0.22);
+      background: rgba(255, 216, 74, 0.075);
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .mod-league-points-info strong {
+      color: var(--yellow);
+    }
+    .mod-league-points-info span {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--text);
+      font-weight: 900;
+      line-height: 1.45;
+    }
+
     @media (max-width: 760px) {
       .mod-table-outer {
         display: block !important;
@@ -675,6 +759,27 @@
       border-radius: 18px;
       background: rgba(255,255,255,0.035);
     }
+
+    .mod-league-points-info {
+      margin: 14px 0 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 216, 74, 0.22);
+      background: rgba(255, 216, 74, 0.075);
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .mod-league-points-info strong {
+      color: var(--yellow);
+    }
+    .mod-league-points-info span {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--text);
+      font-weight: 900;
+      line-height: 1.45;
+    }
+
     @media (max-width: 760px) {
       .mod-toolbar {
         width: 100%;
@@ -923,6 +1028,10 @@
       dom.content.innerHTML = `
         <section class="mod-ranking">
           <h2>${escapeHtml(label)} <small>zum Einblenden oder Vorlesen</small></h2>
+          <div class="mod-league-points-info">
+            <strong>Punktevergabe:</strong><br>
+            <span>1. Platz 20 · 2. Platz 16 · 3. Platz 12 · 4. Platz 9 · 5. Platz 6 · 6. Platz 4 · 7. Platz 2 · ab Platz 8 je 1 Punkt</span>
+          </div>
           <div class="mod-league-grid">
             ${rows.length ? rows.map((row, index) => `
               <article class="mod-league-row">
