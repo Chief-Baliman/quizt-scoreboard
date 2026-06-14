@@ -50,10 +50,6 @@
       "moderatorViews": {
         ".read": true,
         ".write": "auth != null && auth.uid === 'FMZW16NbeQXPKmVE50BcnbRYI2o1'"
-      },
-      "league": {
-        ".read": true,
-        ".write": "auth != null && auth.uid === 'FMZW16NbeQXPKmVE50BcnbRYI2o1'"
       }
     }
   }
