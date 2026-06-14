@@ -97,3 +97,14 @@ Firebase:
   - Standard-Ranking: Quartal, All-Time oder beide
 - `index.html` zeigt Liga-Buttons basierend auf diesen Einstellungen.
 - Haupt-`app.js` wurde nur minimal ergänzt, um öffentliche Liga-Buttons einzublenden.
+
+
+## v3 Optik & öffentliche Ansicht
+
+- Öffentliche Liga-Ansicht ist bereinigt:
+  - keine JavaScript-/Firebase-/Admin-Texte sichtbar
+  - kein Loginbereich sichtbar
+  - nur Ranking mit Rücksprung zur Code-Eingabe bzw. zum Event
+  - Admin-Login nur dezent unten
+- Event-Seiten-Link enthält jetzt den Event-Code und kann zurück zum Event führen.
+- Buttons auf Event-Seiten wurden für Mobile sauberer angeordnet.

@@ -72,6 +72,27 @@
     .inline { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
     .inline label { flex:1 1 220px; }
     .footer-note { margin-top:18px; color:var(--muted); font-size:13px; }
+    .footer-admin { margin-top: 26px; display:flex; justify-content:center; }
+    .public-clean .status,
+    .public-clean #loginCard,
+    .public-clean #app,
+    .public-clean #technicalFooterNote,
+    .public-clean #adminAreaLink {
+      display:none !important;
+    }
+    .public-clean .top {
+      margin-bottom: 12px;
+    }
+    .public-clean h1 {
+      font-size: clamp(34px, 7vw, 72px);
+    }
+    .public-clean .top-links {
+      justify-content: flex-start;
+      margin-bottom: 22px;
+    }
+    .public-clean #publicLeagueView {
+      margin-top: 8px;
+    }
     .nav-btn {
       display:inline-flex; align-items:center; justify-content:center; min-height:46px;
       padding:12px 16px; border-radius:14px; border:1px solid rgba(40,230,255,.25);
@@ -103,12 +124,13 @@
         <h1>Quizt Liga</h1>
         <p>Offizieller Liga-Bereich. Das Haupt-Scoreboard bleibt technisch getrennt und geschützt.</p>
       </div>
-      <div class="pill">liga v2</div>
+      <div class="pill">liga v3</div>
     </div>
 
     <div class="actions top-links">
-      <a class="nav-btn" href="./">Zurück zum Scoreboard</a>
-      <a class="nav-btn" href="./#admin">Zum normalen Admin-Bereich</a>
+      <a id="backToScoreboardLink" class="nav-btn" href="./">Zurück zur Code-Eingabe</a>
+      <a id="backToEventLink" class="nav-btn hidden" href="./">Zurück zum Event</a>
+      <a id="adminAreaLink" class="nav-btn" href="./#admin">Zum normalen Admin-Bereich</a>
     </div>
 
     <div id="status" class="status">HTML geladen. Warte auf JavaScript ...</div>
@@ -245,7 +267,11 @@
       </section>
     </section>
 
-    <div class="footer-note">
+    <div id="publicFooterAdmin" class="footer-admin hidden">
+      <a class="nav-btn" href="./liga.html">Admin Login</a>
+    </div>
+
+    <div id="technicalFooterNote" class="footer-note">
       Dieser Liga-Bereich schreibt ausschließlich unter <code>quiztScoreboard/league/results</code> und liest <code>quiztScoreboard/adminEvents</code>.
     </div>
   </main>
@@ -291,6 +317,11 @@
       loginCard: $("loginCard"),
       app: $("app"),
       publicLeagueView: $("publicLeagueView"),
+      backToScoreboardLink: $("backToScoreboardLink"),
+      backToEventLink: $("backToEventLink"),
+      adminAreaLink: $("adminAreaLink"),
+      publicFooterAdmin: $("publicFooterAdmin"),
+      technicalFooterNote: $("technicalFooterNote"),
       publicLeagueTitle: $("publicLeagueTitle"),
       publicLeagueSubline: $("publicLeagueSubline"),
       publicQuarterBtn: $("publicQuarterBtn"),
@@ -701,9 +732,26 @@
     });
 
     async function bootPublicView() {
+      document.body.classList.add("public-clean");
       nodes.loginCard.classList.add("hidden");
       nodes.app.classList.add("hidden");
       nodes.publicLeagueView.classList.remove("hidden");
+      nodes.publicFooterAdmin.classList.remove("hidden");
+
+      const params = new URLSearchParams(location.search);
+      const code = String(params.get("code") || "").replace(/\D/g, "").slice(0, 4);
+      const returnType = params.get("return") || "home";
+
+      nodes.backToScoreboardLink.href = "./";
+      nodes.backToScoreboardLink.textContent = "Zurück zur Code-Eingabe";
+
+      if (returnType === "event" && code.length === 4) {
+        nodes.backToEventLink.href = `./?code=${encodeURIComponent(code)}`;
+        nodes.backToEventLink.classList.remove("hidden");
+      } else {
+        nodes.backToEventLink.classList.add("hidden");
+      }
+
       await loadSettings();
       listenLeague();
       await checkFirebase();

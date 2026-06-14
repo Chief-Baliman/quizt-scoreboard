@@ -237,6 +237,7 @@ function renderPublicEvent(rawEvent) {
     dom.rankingList.innerHTML = "";
     dom.roundBreakdown.innerHTML = "";
     dom.podiumView.classList.add("hidden");
+    renderPublicLeagueButtons();
     return;
   }
 
@@ -263,6 +264,7 @@ function renderPublicEvent(rawEvent) {
   `).join("");
 
   renderBreakdown(event);
+  renderPublicLeagueButtons();
 }
 
 function renderPodium(event, ranking) {
@@ -1136,21 +1138,25 @@ function stopAdminListener() {
   dom.editorCard.classList.add("hidden");
 }
 
-function buildLeaguePublicUrl() {
+function buildLeaguePublicUrl(context = "home") {
   const mode = publicLeagueSettings.publicMode || "quarter";
-  return `./liga.html?view=public&mode=${encodeURIComponent(mode)}`;
+  const params = new URLSearchParams({ view: "public", mode, return: context });
+
+  if (context === "event" && currentPublicEvent?.code) {
+    params.set("code", currentPublicEvent.code);
+  }
+
+  return `./liga.html?${params.toString()}`;
 }
 
 function renderPublicLeagueButtons() {
-  const url = buildLeaguePublicUrl();
-
   if (dom.leagueHomeBtn) {
-    dom.leagueHomeBtn.href = url;
+    dom.leagueHomeBtn.href = buildLeaguePublicUrl("home");
     dom.leagueHomeBtn.classList.toggle("hidden", !publicLeagueSettings.showHomeButton);
   }
 
   if (dom.leagueEventBtn) {
-    dom.leagueEventBtn.href = url;
+    dom.leagueEventBtn.href = buildLeaguePublicUrl("event");
     dom.leagueEventBtn.classList.toggle("hidden", !publicLeagueSettings.showEventButton);
   }
 }

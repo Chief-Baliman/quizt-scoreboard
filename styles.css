@@ -3122,3 +3122,44 @@ select {
 .draft-status-box.status-clean strong {
   color: var(--cyan);
 }
+
+
+/* Liga v3: saubere Button-Positionierung */
+.public-quick-actions {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 0;
+}
+
+.scoreboard-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+  .scoreboard-head {
+    gap: 16px;
+  }
+
+  .scoreboard-actions {
+    width: 100%;
+    justify-content: stretch;
+    gap: 10px;
+  }
+
+  .scoreboard-actions .ghost-btn,
+  .scoreboard-actions a.ghost-btn {
+    flex: 1 1 150px;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .public-quick-actions .insta-cta {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}
