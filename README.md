@@ -151,3 +151,11 @@ Firebase:
 - Öffentliche Liga hat ein Suchfeld für Teamnamen.
 - Suche filtert Quartals- und All-Time-Ranking, behält aber die echte Platzierung bei.
 - Öffentliche Liga-Links verwenden `v=8` gegen alte Cache-Stände.
+
+
+## v9 Moderator-Ansicht
+
+- Button `Normale Ansicht` aus der Moderator-Toolbar entfernt.
+- Moderator-Toolbar enthält jetzt nur noch:
+  - Moderation
+  - Liga
