@@ -1,4 +1,4 @@
-# Quizt Scoreboard v50
+# Quizt Scoreboard v51
 
 Responsive Punkteübersicht für Quizt Events mit Firebase Realtime Database und GitHub Pages.
 
@@ -183,3 +183,14 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
 - v49 bitte nicht verwenden, wenn du keine zusätzlichen Dateien möchtest.
 - Status zeigt `HTML v50` und danach `app.js v50`, sobald die bestehende `app.js` korrekt geladen wurde.
 - Bestehende Dateienstruktur bleibt: `index.html`, `app.js`, `styles.css`, `README.md`, `moderator.html`, `quizt-story-template.png`.
+
+
+## Änderungen in v51
+
+- Vollständiger, sauberer Stand ohne Zusatzdateien.
+- JavaScript wird weiterhin über `app.js` geladen.
+- Der Script-Tag steht jetzt sichtbar im `<head>`:
+  `<script id="quiztAppScript" type="module" src="./app.js?v=51"></script>`
+- Es gibt keine zusätzliche `app-vXX.js`.
+- Der alte Script-Tag am Ende der Datei wurde entfernt, damit es keine Dopplung gibt.
+- Wenn `document.querySelectorAll('script').length` weiterhin `0` ergibt, ist die veröffentlichte `index.html` nicht vollständig aus dieser Version ersetzt worden.
