@@ -15,6 +15,7 @@ const firebaseConfig = {
 
 const ADMIN_UID = "FMZW16NbeQXPKmVE50BcnbRYI2o1";
 const ROOT_PATH = "quiztScoreboard";
+const APP_VERSION = "v48";
 const LEAGUE_POINTS = [20, 16, 12, 9, 6, 4, 2];
 
 const app = initializeApp(firebaseConfig);
@@ -112,6 +113,7 @@ const dom = {
   adminLeagueAllTime: $("#adminLeagueAllTime"),
   leagueLastSaveBox: $("#leagueLastSaveBox"),
   leagueDebugBox: $("#leagueDebugBox"),
+  checkLeagueFirebaseBtn: $("#checkLeagueFirebaseBtn"),
   leagueResultsList: $("#leagueResultsList")
 };
 
@@ -129,6 +131,7 @@ let pendingLeagueImport = null;
 let publicLeagueMode = "quarter";
 let lastSavedLeagueEntry = null;
 
+setLeagueDebug(`Liga-Status: app.js ${APP_VERSION} geladen. Firebase wird verbunden ...`);
 
 function setupBrandLogo() {
   const logo = document.querySelector("#brandLogo");
@@ -167,6 +170,11 @@ function escapeHtml(value = "") {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function setLeagueDebug(text) {
+  const box = document.querySelector("#leagueDebugBox");
+  if (box) box.textContent = text;
 }
 
 function showMessage(node, text, type = "") {
@@ -1255,7 +1263,7 @@ function forceRenderLeagueTables(resultsObject, statusText = "") {
 
   if (dom.leagueDebugBox) {
     const count = results.length;
-    dom.leagueDebugBox.textContent = statusText || `Liga-Status: v47 aktiv · ${count} Eintrag${count === 1 ? "" : "e"} sichtbar.`;
+    dom.leagueDebugBox.textContent = statusText || `Liga-Status: app.js v48 aktiv · ${count} Eintrag${count === 1 ? "" : "e"} sichtbar.`;
   }
 }
 
@@ -1366,7 +1374,7 @@ function renderAdminLeague() {
 
   forceRenderLeagueTables(
     renderable,
-    `Liga-Status: v47 aktiv · Firebase: ${savedResultsCount} · lokal: ${localResultsCount}${previewCount ? " · 1 vorbereitete Übernahme sichtbar" : ""}.`
+    `Liga-Status: app.js v48 aktiv · Firebase: ${savedResultsCount} · lokal: ${localResultsCount}${previewCount ? " · 1 vorbereitete Übernahme sichtbar" : ""}.`
   );
 
   updateLeagueActiveEventHint();
@@ -1391,6 +1399,8 @@ function renderAdminLeague() {
 function startLeagueListener() {
   if (unsubscribeLeague) unsubscribeLeague();
 
+  setLeagueDebug(`Liga-Status: app.js ${APP_VERSION} aktiv · Firebase-Liga wird gelesen ...`);
+
   unsubscribeLeague = onValue(ref(db, `${ROOT_PATH}/league`), (snapshot) => {
     const value = snapshot.val() || {};
     leagueSettings = {
@@ -1401,6 +1411,9 @@ function startLeagueListener() {
 
     renderPublicLeague();
     renderAdminLeague();
+  }, (error) => {
+    setLeagueDebug(`Liga-Status: Firebase-Fehler beim Lesen: ${error.message}`);
+    showMessage(dom.leagueMessage, `Firebase-Fehler beim Lesen der Liga: ${error.message}`, "error");
   });
 }
 
@@ -1581,7 +1594,7 @@ async function saveLeagueImport(event) {
 
     pendingLeagueImport = null;
     dom.leagueImportBox?.classList.add("hidden");
-    forceRenderLeagueTables(getRenderableLeagueResults(), "Liga-Status: v47 aktiv · Eintrag wurde gerade gespeichert und direkt angezeigt.");
+    forceRenderLeagueTables(getRenderableLeagueResults(), "Liga-Status: app.js v48 aktiv · Eintrag wurde gerade gespeichert und direkt angezeigt.");
     renderAdminLeague();
     renderPublicLeague();
     updateLeagueActiveEventHint();
@@ -1604,6 +1617,23 @@ async function saveLeagueImport(event) {
 
 window.quiztSaveLeagueImport = saveLeagueImport;
 
+
+async function checkLeagueFirebase() {
+  try {
+    setLeagueDebug("Liga-Status: Firebase-Prüfung läuft ...");
+    const snapshot = await get(ref(db, `${ROOT_PATH}/league/results`));
+    const value = snapshot.val() || {};
+    leagueResults = value;
+    lastSavedLeagueEntry = null;
+    renderAdminLeague();
+    const count = Object.keys(value).length;
+    setLeagueDebug(`Liga-Status: app.js ${APP_VERSION} aktiv · Firebase-Prüfung: ${count} gespeicherte Liga-Einträge gefunden.`);
+    showMessage(dom.leagueMessage, `Firebase-Prüfung abgeschlossen: ${count} Liga-Einträge gefunden.`, count ? "success" : "error");
+  } catch (error) {
+    setLeagueDebug(`Liga-Status: Firebase-Prüfung fehlgeschlagen: ${error.message}`);
+    showMessage(dom.leagueMessage, `Firebase-Prüfung fehlgeschlagen: ${error.message}`, "error");
+  }
+}
 
 async function saveLeagueSettings() {
   if (!requireAdmin()) return;
@@ -1749,6 +1779,7 @@ dom.adminToggleBtn.addEventListener("click", () => dom.adminPanel.classList.togg
   });
   dom.saveLeagueImportBtn?.addEventListener("click", saveLeagueImport);
   dom.addManualLeagueEntryBtn?.addEventListener("click", addManualLeagueEntry);
+  dom.checkLeagueFirebaseBtn?.addEventListener("click", checkLeagueFirebase);
 
   document.addEventListener("click", (event) => {
     const target = event.target?.closest?.("#prepareLeagueImportBtn, #prepareLeagueImportEditorBtn");

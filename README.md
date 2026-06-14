@@ -1,4 +1,4 @@
-# Quizt Scoreboard v47
+# Quizt Scoreboard v48
 
 Responsive Punkteübersicht für Quizt Events mit Firebase Realtime Database und GitHub Pages.
 
@@ -165,3 +165,12 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
 - Beim Speichern wird der Liga-Eintrag zusätzlich lokal als Fallback gespeichert.
 - Die Tabellen werden direkt aus Firebase + lokalem Fallback gerendert.
 - Wenn v47 im Liga-Admin nicht sichtbar ist, ist noch eine alte Datei oder Cache aktiv.
+
+
+## Änderungen in v48
+
+- Status zeigt jetzt getrennt, ob nur HTML geladen wurde oder auch `app.js`.
+- Beim Laden wird sofort `app.js v48 geladen` in den Liga-Status geschrieben.
+- Firebase-Leseprobleme werden direkt angezeigt.
+- Button `Firebase-Liga prüfen` ergänzt: liest `quiztScoreboard/league/results` direkt aus Firebase und zeigt die Anzahl der Einträge.
+- Wenn im Status nur `HTML v48 geladen` steht, wird `app.js` nicht geladen oder ist gecached.
