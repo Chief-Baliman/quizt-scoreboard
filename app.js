@@ -782,6 +782,7 @@ function selectAdminEvent(eventId) {
   renderAdminEventList();
   renderEditor();
   renderLeagueEventPicker();
+  dom.editorCard?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function ensureScoresForTeams(event) {
@@ -1140,6 +1141,7 @@ function startAdminListener() {
   unsubscribeAdminEvents = onValue(adminRef, (snapshot) => {
     adminEvents = snapshot.val() || {};
     renderAdminEventList();
+    renderLeagueEventPicker();
 
     if (activeEventId && adminEvents[activeEventId]) {
       activeDraft = normalizeEvent(structuredClone(adminEvents[activeEventId]));
@@ -1243,7 +1245,7 @@ function renderAdminLeague() {
   renderLeagueList(dom.adminLeagueQuarter, tables.quarter);
   renderLeagueList(dom.adminLeagueAllTime, tables.allTime);
 
-  updateLeagueActiveEventHint();
+  renderLeagueEventPicker();
 
   const results = Object.values(leagueResults || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
@@ -1310,7 +1312,9 @@ function getSelectedLeagueEvent() {
   const eventId = dom.leagueEventSelect?.value || selectedLeagueEventId || activeEventId;
   if (eventId && adminEvents?.[eventId]) return normalizeEvent(structuredClone(adminEvents[eventId]));
   if (activeDraft?.id) return normalizeEvent(structuredClone(activeDraft));
-  return null;
+
+  const firstEvent = Object.values(adminEvents || {})[0];
+  return firstEvent ? normalizeEvent(structuredClone(firstEvent)) : null;
 }
 
 function renderLeagueEventPicker() {
@@ -1321,8 +1325,14 @@ function renderLeagueEventPicker() {
     .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
   if (!events.length) {
-    dom.leagueEventSelect.innerHTML = `<option value="">Noch keine Events vorhanden</option>`;
-    selectedLeagueEventId = "";
+    if (activeDraft?.id) {
+      dom.leagueEventSelect.innerHTML = `<option value="${escapeHtml(activeDraft.id)}">${escapeHtml(activeDraft.title || "Quizt Event")} · Code ${escapeHtml(activeDraft.code || "----")}</option>`;
+      selectedLeagueEventId = activeDraft.id;
+      dom.leagueEventSelect.value = activeDraft.id;
+    } else {
+      dom.leagueEventSelect.innerHTML = `<option value="">Noch keine Events vorhanden</option>`;
+      selectedLeagueEventId = "";
+    }
     updateLeagueActiveEventHint();
     return;
   }
