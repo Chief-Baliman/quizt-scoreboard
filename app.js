@@ -15,7 +15,8 @@ const firebaseConfig = {
 
 const ADMIN_UID = "FMZW16NbeQXPKmVE50BcnbRYI2o1";
 const ROOT_PATH = "quiztScoreboard";
-const APP_VERSION = "v52";
+const APP_VERSION = "v53";
+window.__quiztAppModuleLoaded = true;
 const LEAGUE_POINTS = [20, 16, 12, 9, 6, 4, 2];
 
 const app = initializeApp(firebaseConfig);
@@ -1261,7 +1262,7 @@ function forceRenderLeagueTables(resultsObject, statusText = "") {
 
   if (dom.leagueDebugBox) {
     const count = results.length;
-    dom.leagueDebugBox.textContent = statusText || `Liga-Status: app.js v52 aktiv · ${count} Eintrag${count === 1 ? "" : "e"} sichtbar.`;
+    dom.leagueDebugBox.textContent = statusText || `Liga-Status: app.js v53 aktiv · ${count} Eintrag${count === 1 ? "" : "e"} sichtbar.`;
   }
 }
 
@@ -1372,7 +1373,7 @@ function renderAdminLeague() {
 
   forceRenderLeagueTables(
     renderable,
-    `Liga-Status: app.js v52 aktiv · Firebase: ${savedResultsCount} · lokal: ${localResultsCount}${previewCount ? " · 1 vorbereitete Übernahme sichtbar" : ""}.`
+    `Liga-Status: app.js v53 aktiv · Firebase: ${savedResultsCount} · lokal: ${localResultsCount}${previewCount ? " · 1 vorbereitete Übernahme sichtbar" : ""}.`
   );
 
   updateLeagueActiveEventHint();
@@ -1592,7 +1593,7 @@ async function saveLeagueImport(event) {
 
     pendingLeagueImport = null;
     dom.leagueImportBox?.classList.add("hidden");
-    forceRenderLeagueTables(getRenderableLeagueResults(), "Liga-Status: app.js v52 aktiv · Eintrag wurde gerade gespeichert und direkt angezeigt.");
+    forceRenderLeagueTables(getRenderableLeagueResults(), "Liga-Status: app.js v53 aktiv · Eintrag wurde gerade gespeichert und direkt angezeigt.");
     renderAdminLeague();
     renderPublicLeague();
     updateLeagueActiveEventHint();
@@ -1830,6 +1831,7 @@ function initFromUrl() {
 }
 
 function bootApp() {
+  window.__quiztAppBooted = true;
   setLeagueDebug(`Liga-Status: app.js ${APP_VERSION} geladen. Firebase wird verbunden ...`);
   bindEvents();
   initAuth();

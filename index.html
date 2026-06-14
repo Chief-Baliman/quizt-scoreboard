@@ -6,14 +6,7 @@
   <title>Quizt Punkteübersicht</title>
   <meta name="description" content="Digitale Punkteübersicht für Quizt Veranstaltungen." />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=52" />
-<script>
-    window.QUIZT_MOD_REDIRECT_V31 = true;
-    const __quiztMod = new URLSearchParams(location.search).get("mod") || new URLSearchParams(location.search).get("moderator");
-    if (__quiztMod && !location.pathname.endsWith("/moderator.html")) {
-      location.replace(new URL(`moderator.html?mod=${encodeURIComponent(__quiztMod)}`, location.href).toString());
-    }
-  </script>
+  <link rel="stylesheet" href="./styles.css?v=53" />
 </head>
 <body>
   <div class="bg-orb bg-orb-one"></div>
@@ -137,7 +130,7 @@
         <section class="league-admin-card" id="leagueAdminCard">
           <div class="section-title-row">
             <div>
-              <h3>Quizt Liga verwalten <span class="version-pill">v52</span></h3>
+              <h3>Quizt Liga verwalten <span class="version-pill">v53</span></h3>
               <p class="muted small-note">Quartalsranking und All-Time-Ranking. Ein geöffnetes Event kann nach Prüfung ins Liga-Ranking übernommen oder erneut überschrieben werden.</p>
             </div>
           </div>
@@ -183,7 +176,7 @@
           </div>
 
           <div id="leagueLastSaveBox" class="league-last-save-box hidden"></div>
-          <div id="leagueDebugBox" class="league-debug-box">Liga-Status: HTML v52 geladen. Script-Tag unten: app.js?v=52. Warte auf app.js v52 ...</div>
+          <div id="leagueDebugBox" class="league-debug-box">Liga-Status: HTML v53 geladen. Warte auf Inline-Modul ...</div>
           <div class="league-admin-actions">
             <button id="checkLeagueFirebaseBtn" class="ghost-btn" type="button">Firebase-Liga prüfen</button>
           </div>
@@ -362,7 +355,7 @@
         <section class="league-admin-card" id="leagueAdminCard">
           <div class="section-title-row">
             <div>
-              <h3>Quizt Liga verwalten <span class="version-pill">v52</span></h3>
+              <h3>Quizt Liga verwalten <span class="version-pill">v53</span></h3>
               <p class="muted small-note">Quartalsranking und All-Time-Ranking. Ein geöffnetes Event kann nach Prüfung ins Liga-Ranking übernommen oder erneut überschrieben werden.</p>
             </div>
           </div>
@@ -408,7 +401,7 @@
           </div>
 
           <div id="leagueLastSaveBox" class="league-last-save-box hidden"></div>
-          <div id="leagueDebugBox" class="league-debug-box">Liga-Status: HTML v52 geladen. Script-Tag unten: app.js?v=52. Warte auf app.js v52 ...</div>
+          <div id="leagueDebugBox" class="league-debug-box">Liga-Status: HTML v53 geladen. Warte auf Inline-Modul ...</div>
           <div class="league-admin-actions">
             <button id="checkLeagueFirebaseBtn" class="ghost-btn" type="button">Firebase-Liga prüfen</button>
           </div>
@@ -438,6 +431,32 @@
     <a href="https://www.instagram.com/quiz_mit_twist/" target="_blank" rel="noopener noreferrer">Instagram @quiz_mit_twist</a>
     <button id="adminToggleBtn" class="admin-footer-btn" type="button">Admin</button>
   </footer>
-  <script id="quiztAppScript" type="module" src="./app.js?v=52"></script>
+  <script id="quiztAppScript" type="module">
+    const quiztBox = document.querySelector("#leagueDebugBox");
+    if (quiztBox) quiztBox.textContent = "Liga-Status: Inline-Modul v53 läuft. Lade app.js v53 ...";
+    window.addEventListener("error", (event) => {
+      const box = document.querySelector("#leagueDebugBox");
+      if (box) box.textContent = `Liga-Status: JavaScript-Fehler: ${event.message}`;
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      const box = document.querySelector("#leagueDebugBox");
+      const reason = event.reason?.message || String(event.reason || "Unbekannter Fehler");
+      if (box) box.textContent = `Liga-Status: Promise-Fehler: ${reason}`;
+    });
+    import("./app.js?v=53")
+      .then(() => {
+        setTimeout(() => {
+          const box = document.querySelector("#leagueDebugBox");
+          if (!window.__quiztAppBooted && box) {
+            box.textContent = "Liga-Status: app.js v53 wurde importiert, aber bootApp wurde nicht gestartet.";
+          }
+        }, 400);
+      })
+      .catch((error) => {
+        const box = document.querySelector("#leagueDebugBox");
+        if (box) box.textContent = `Liga-Status: app.js v53 konnte nicht geladen werden: ${error.message}`;
+        console.error(error);
+      });
+  </script>
 </body>
 </html>
