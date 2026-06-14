@@ -15,6 +15,7 @@ const firebaseConfig = {
 
 const ADMIN_UID = "FMZW16NbeQXPKmVE50BcnbRYI2o1";
 const ROOT_PATH = "quiztScoreboard";
+const LEAGUE_POINTS = [20, 16, 12, 9, 6, 4, 2];
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -87,7 +88,27 @@ const dom = {
   addRoundBtn: $("#addRoundBtn"),
   saveDraftBtn: $("#saveDraftBtn"),
   publishBtn: $("#publishBtn"),
-  editorMessage: $("#editorMessage")
+  editorMessage: $("#editorMessage"),
+  publicLeagueBox: $("#publicLeagueBox"),
+  publicLeagueList: $("#publicLeagueList"),
+  publicLeagueQuarterBtn: $("#publicLeagueQuarterBtn"),
+  publicLeagueAllTimeBtn: $("#publicLeagueAllTimeBtn"),
+  leagueEnabledInput: $("#leagueEnabledInput"),
+  leagueShowHomeInput: $("#leagueShowHomeInput"),
+  saveLeagueSettingsBtn: $("#saveLeagueSettingsBtn"),
+  prepareLeagueImportBtn: $("#prepareLeagueImportBtn"),
+  leagueMessage: $("#leagueMessage"),
+  leagueImportBox: $("#leagueImportBox"),
+  leagueImportRows: $("#leagueImportRows"),
+  cancelLeagueImportBtn: $("#cancelLeagueImportBtn"),
+  saveLeagueImportBtn: $("#saveLeagueImportBtn"),
+  manualLeagueTeamInput: $("#manualLeagueTeamInput"),
+  manualLeaguePointsInput: $("#manualLeaguePointsInput"),
+  manualLeagueNoteInput: $("#manualLeagueNoteInput"),
+  addManualLeagueEntryBtn: $("#addManualLeagueEntryBtn"),
+  adminLeagueQuarter: $("#adminLeagueQuarter"),
+  adminLeagueAllTime: $("#adminLeagueAllTime"),
+  leagueResultsList: $("#leagueResultsList")
 };
 
 let currentUser = null;
@@ -1132,6 +1153,273 @@ function stopAdminListener() {
   dom.editorCard.classList.add("hidden");
 }
 
+function getLeaguePoints(place) {
+  return LEAGUE_POINTS[place - 1] ?? 1;
+}
+
+function getQuarterKey(date = new Date()) {
+  const month = date.getMonth();
+  const quarter = Math.floor(month / 3) + 1;
+  return `${date.getFullYear()}-Q${quarter}`;
+}
+
+function normalizeLeagueTeamName(name = "") {
+  return String(name || "").trim().replace(/\s+/g, " ") || "Unbenanntes Team";
+}
+
+function calculateLeagueTables(results = leagueResults) {
+  const quarterKey = getQuarterKey();
+  const allTime = new Map();
+  const quarter = new Map();
+
+  Object.values(results || {}).forEach((entry) => {
+    if (!entry || entry.deleted) return;
+    const teams = Array.isArray(entry.teams) ? entry.teams : [];
+    teams.forEach((team) => {
+      const name = normalizeLeagueTeamName(team.name);
+      const points = scoreNumber(team.points);
+      if (!name || !points) return;
+
+      const currentAll = allTime.get(name) || { name, points: 0, events: 0 };
+      currentAll.points += points;
+      currentAll.events += 1;
+      allTime.set(name, currentAll);
+
+      if ((entry.quarter || "") === quarterKey) {
+        const currentQuarter = quarter.get(name) || { name, points: 0, events: 0 };
+        currentQuarter.points += points;
+        currentQuarter.events += 1;
+        quarter.set(name, currentQuarter);
+      }
+    });
+  });
+
+  const sortRows = (rows) => [...rows.values()].sort((a, b) => b.points - a.points || a.name.localeCompare(b.name, "de"));
+  return { quarter: sortRows(quarter), allTime: sortRows(allTime), quarterKey };
+}
+
+function renderLeagueList(target, rows, emptyText = "Noch keine Liga-Punkte vorhanden.") {
+  if (!target) return;
+  if (!rows.length) {
+    target.innerHTML = `<p class="muted">${emptyText}</p>`;
+    return;
+  }
+
+  target.innerHTML = rows.slice(0, 12).map((row, index) => `
+    <article class="league-row">
+      <span>${index + 1}</span>
+      <strong>${escapeHtml(row.name)}</strong>
+      <b>${row.points}</b>
+      <small>${row.events} ${row.events === 1 ? "Eintrag" : "Einträge"}</small>
+    </article>
+  `).join("");
+}
+
+function renderPublicLeague() {
+  if (!dom.publicLeagueBox || !dom.publicLeagueList) return;
+  const tables = calculateLeagueTables();
+
+  const visible = Boolean(leagueSettings.enabled && leagueSettings.showOnHome);
+  dom.publicLeagueBox.classList.toggle("hidden", !visible);
+  if (!visible) return;
+
+  const rows = publicLeagueMode === "allTime" ? tables.allTime : tables.quarter;
+  renderLeagueList(dom.publicLeagueList, rows, "Noch keine Liga-Wertung veröffentlicht.");
+
+  dom.publicLeagueQuarterBtn?.classList.toggle("active", publicLeagueMode === "quarter");
+  dom.publicLeagueAllTimeBtn?.classList.toggle("active", publicLeagueMode === "allTime");
+}
+
+function renderAdminLeague() {
+  if (dom.leagueEnabledInput) dom.leagueEnabledInput.checked = Boolean(leagueSettings.enabled);
+  if (dom.leagueShowHomeInput) dom.leagueShowHomeInput.checked = Boolean(leagueSettings.showOnHome);
+
+  const tables = calculateLeagueTables();
+  renderLeagueList(dom.adminLeagueQuarter, tables.quarter);
+  renderLeagueList(dom.adminLeagueAllTime, tables.allTime);
+
+  const results = Object.values(leagueResults || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  if (!dom.leagueResultsList) return;
+  if (!results.length) {
+    dom.leagueResultsList.innerHTML = "<p class='muted'>Noch keine Liga-Einträge gespeichert.</p>";
+    return;
+  }
+
+  dom.leagueResultsList.innerHTML = results.slice(0, 20).map((entry) => `
+    <article class="league-result-item">
+      <div>
+        <strong>${escapeHtml(entry.title || "Liga-Eintrag")}</strong>
+        <small>${escapeHtml(entry.quarter || "")} · ${formatDate(entry.createdAt)} · ${entry.type === "manual" ? "Manuell" : "Event"}</small>
+      </div>
+      <div class="league-result-teams">
+        ${(entry.teams || []).map((team) => `<span>${escapeHtml(team.name)}: ${scoreNumber(team.points)}</span>`).join("")}
+      </div>
+      <button class="tiny-btn danger" type="button" data-delete-league-result="${escapeHtml(entry.id)}">Entfernen</button>
+    </article>
+  `).join("");
+
+  dom.leagueResultsList.querySelectorAll("[data-delete-league-result]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (!requireAdmin()) return;
+      const id = button.dataset.deleteLeagueResult;
+      await remove(ref(db, `${ROOT_PATH}/league/results/${id}`));
+      showMessage(dom.leagueMessage, "Liga-Eintrag entfernt.", "success");
+    });
+  });
+}
+
+function startLeagueListener() {
+  if (unsubscribeLeague) unsubscribeLeague();
+
+  unsubscribeLeague = onValue(ref(db, `${ROOT_PATH}/league`), (snapshot) => {
+    const value = snapshot.val() || {};
+    leagueSettings = {
+      enabled: Boolean(value.settings?.enabled),
+      showOnHome: Boolean(value.settings?.showOnHome)
+    };
+    leagueResults = value.results || {};
+
+    renderPublicLeague();
+    renderAdminLeague();
+  });
+}
+
+function stopLeagueListener() {
+  if (unsubscribeLeague) unsubscribeLeague();
+  unsubscribeLeague = null;
+}
+
+function prepareLeagueImport() {
+  if (!activeDraft) {
+    showMessage(dom.leagueMessage, "Bitte zuerst ein Event öffnen.", "error");
+    return;
+  }
+
+  const event = normalizeEvent(structuredClone(activeDraft));
+  const ranking = calculateRanking(event);
+  if (!ranking.length) {
+    showMessage(dom.leagueMessage, "Dieses Event hat noch keine Teams.", "error");
+    return;
+  }
+
+  pendingLeagueImport = {
+    id: event.id,
+    title: event.title || "Quizt Event",
+    code: event.code || "",
+    quarter: getQuarterKey(new Date(event.updatedAt || Date.now())),
+    teams: ranking.map((team, index) => ({
+      originalName: team.name,
+      name: team.name,
+      place: index + 1,
+      score: team.total,
+      points: getLeaguePoints(index + 1)
+    }))
+  };
+
+  dom.leagueImportBox?.classList.remove("hidden");
+  renderLeagueImportRows();
+  showMessage(dom.leagueMessage, "Bitte Teamnamen und Liga-Punkte prüfen.", "success");
+}
+
+function renderLeagueImportRows() {
+  if (!pendingLeagueImport || !dom.leagueImportRows) return;
+
+  dom.leagueImportRows.innerHTML = pendingLeagueImport.teams.map((team, index) => `
+    <div class="league-import-row">
+      <span class="league-place">${team.place}.</span>
+      <div>
+        <strong>${escapeHtml(team.originalName)}</strong>
+        <small>${team.score} Quizpunkte</small>
+      </div>
+      <label>Liga-Team
+        <input type="text" value="${escapeHtml(team.name)}" data-league-team-name="${index}" />
+      </label>
+      <label>Punkte
+        <input type="number" step="1" value="${team.points}" data-league-team-points="${index}" />
+      </label>
+    </div>
+  `).join("");
+
+  dom.leagueImportRows.querySelectorAll("[data-league-team-name]").forEach((input) => {
+    input.addEventListener("input", () => {
+      pendingLeagueImport.teams[Number(input.dataset.leagueTeamName)].name = input.value;
+    });
+  });
+
+  dom.leagueImportRows.querySelectorAll("[data-league-team-points]").forEach((input) => {
+    input.addEventListener("input", () => {
+      pendingLeagueImport.teams[Number(input.dataset.leagueTeamPoints)].points = scoreNumber(input.value);
+    });
+  });
+}
+
+async function saveLeagueImport() {
+  if (!requireAdmin() || !pendingLeagueImport) return;
+
+  const entry = {
+    id: `event_${pendingLeagueImport.id}`,
+    type: "event",
+    eventId: pendingLeagueImport.id,
+    code: pendingLeagueImport.code,
+    title: pendingLeagueImport.title,
+    quarter: pendingLeagueImport.quarter,
+    createdAt: Date.now(),
+    teams: pendingLeagueImport.teams.map((team) => ({
+      name: normalizeLeagueTeamName(team.name),
+      place: team.place,
+      quizPoints: team.score,
+      points: scoreNumber(team.points)
+    }))
+  };
+
+  await set(ref(db, `${ROOT_PATH}/league/results/${entry.id}`), entry);
+  pendingLeagueImport = null;
+  dom.leagueImportBox?.classList.add("hidden");
+  showMessage(dom.leagueMessage, "Event wurde ins Liga-Ranking übernommen.", "success");
+}
+
+async function saveLeagueSettings() {
+  if (!requireAdmin()) return;
+  const settings = {
+    enabled: Boolean(dom.leagueEnabledInput?.checked),
+    showOnHome: Boolean(dom.leagueShowHomeInput?.checked),
+    updatedAt: Date.now()
+  };
+  await set(ref(db, `${ROOT_PATH}/league/settings`), settings);
+  showMessage(dom.leagueMessage, "Liga-Einstellungen gespeichert.", "success");
+}
+
+async function addManualLeagueEntry() {
+  if (!requireAdmin()) return;
+
+  const name = normalizeLeagueTeamName(dom.manualLeagueTeamInput?.value);
+  const points = scoreNumber(dom.manualLeaguePointsInput?.value);
+  const note = String(dom.manualLeagueNoteInput?.value || "").trim();
+
+  if (!name || !points) {
+    showMessage(dom.leagueMessage, "Bitte Teamname und Punkte eintragen.", "error");
+    return;
+  }
+
+  const id = `manual_${uid()}`;
+  const entry = {
+    id,
+    type: "manual",
+    title: note || "Manuelle Korrektur",
+    quarter: getQuarterKey(),
+    createdAt: Date.now(),
+    teams: [{ name, points }]
+  };
+
+  await set(ref(db, `${ROOT_PATH}/league/results/${id}`), entry);
+  if (dom.manualLeagueTeamInput) dom.manualLeagueTeamInput.value = "";
+  if (dom.manualLeaguePointsInput) dom.manualLeaguePointsInput.value = "";
+  if (dom.manualLeagueNoteInput) dom.manualLeagueNoteInput.value = "";
+  showMessage(dom.leagueMessage, "Korrektur wurde gebucht.", "success");
+}
+
+
 function bindEvents() {
   setupBrandLogo();
 
@@ -1215,6 +1503,24 @@ dom.adminToggleBtn.addEventListener("click", () => dom.adminPanel.classList.togg
   });
   dom.openStoryTemplateBtn?.addEventListener("click", openStoryTemplateView);
   dom.backFromStoryBtn?.addEventListener("click", closeStoryTemplateView);
+
+  dom.publicLeagueQuarterBtn?.addEventListener("click", () => {
+    publicLeagueMode = "quarter";
+    renderPublicLeague();
+  });
+  dom.publicLeagueAllTimeBtn?.addEventListener("click", () => {
+    publicLeagueMode = "allTime";
+    renderPublicLeague();
+  });
+  dom.saveLeagueSettingsBtn?.addEventListener("click", saveLeagueSettings);
+  dom.prepareLeagueImportBtn?.addEventListener("click", prepareLeagueImport);
+  dom.cancelLeagueImportBtn?.addEventListener("click", () => {
+    pendingLeagueImport = null;
+    dom.leagueImportBox?.classList.add("hidden");
+    showMessage(dom.leagueMessage, "");
+  });
+  dom.saveLeagueImportBtn?.addEventListener("click", saveLeagueImport);
+  dom.addManualLeagueEntryBtn?.addEventListener("click", addManualLeagueEntry);
 }
 
 function initAuth() {
@@ -1256,4 +1562,5 @@ function initFromUrl() {
 
 bindEvents();
 initAuth();
+startLeagueListener();
 initFromUrl();

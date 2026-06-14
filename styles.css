@@ -3122,3 +3122,178 @@ select {
 .draft-status-box.status-clean strong {
   color: var(--cyan);
 }
+
+
+/* V36: Quizt Liga */
+.public-league-box,
+.league-admin-card {
+  margin-top: 22px;
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(40, 230, 255, 0.18);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 216, 74, 0.10), transparent 34%),
+    rgba(4, 10, 20, 0.72);
+}
+
+.league-box-head,
+.league-admin-actions,
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.league-box-head h2,
+.league-admin-card h3,
+.league-admin-card h4 {
+  margin: 4px 0 8px;
+}
+
+.league-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tiny-btn.active {
+  border-color: rgba(255, 216, 74, 0.5);
+  color: var(--yellow);
+  background: rgba(255, 216, 74, 0.10);
+}
+
+.league-mini-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.league-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(129,154,190,0.12);
+}
+
+.league-row span {
+  color: var(--cyan);
+  font-weight: 1000;
+}
+
+.league-row strong {
+  overflow-wrap: anywhere;
+}
+
+.league-row b {
+  color: var(--yellow);
+  font-size: 1.25rem;
+}
+
+.league-row small {
+  grid-column: 2 / 4;
+  color: var(--muted);
+}
+
+.league-admin-card {
+  margin-top: 22px;
+}
+
+.league-switches {
+  margin-top: 16px;
+}
+
+.league-admin-actions {
+  justify-content: flex-start;
+  margin-top: 14px;
+}
+
+.league-import-box,
+.league-manual-box,
+.league-results-card {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(129,154,190,0.14);
+  background: rgba(2,7,15,0.58);
+}
+
+.league-import-rows {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.league-import-row {
+  display: grid;
+  grid-template-columns: 42px minmax(160px, 1fr) minmax(180px, 1.1fr) 110px;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.035);
+}
+
+.league-place {
+  color: var(--orange);
+  font-weight: 1000;
+}
+
+.league-rankings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.league-results-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.league-result-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 1.2fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.035);
+}
+
+.league-result-item small,
+.league-result-teams span {
+  display: block;
+  color: var(--muted);
+}
+
+.tiny-btn.danger {
+  border-color: rgba(255, 91, 91, 0.35);
+  color: #ff9c9c;
+}
+
+@media (max-width: 760px) {
+  .league-admin-card,
+  .public-league-box {
+    padding: 16px 12px;
+  }
+
+  .league-rankings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .league-import-row,
+  .league-result-item {
+    grid-template-columns: 1fr;
+  }
+
+  .league-row {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+  }
+}

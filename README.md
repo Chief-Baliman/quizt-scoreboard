@@ -1,4 +1,4 @@
-# Quizt Scoreboard v35
+# Quizt Scoreboard v36
 
 Responsive Punkteübersicht für Quizt Events mit Firebase Realtime Database und GitHub Pages.
 
@@ -64,3 +64,24 @@ Firebase Rules bleiben wie bei v27. Wenn du die v27-Rules schon veröffentlicht 
 - Runden-Tabelle im Moderator-View wurde technisch neu als echter horizontaler Scroll-Container aufgebaut.
 - Scroll liegt jetzt auf einem eigenen äußeren Container, nicht mehr auf der Tabelle selbst.
 - Parent-Container blockieren das seitliche Scrollen nicht mehr.
+
+
+## Änderungen in v36
+
+- Quizt-Liga ergänzt.
+- Feste Liga-Wertung:
+  - Platz 1: 20 Punkte
+  - Platz 2: 16 Punkte
+  - Platz 3: 12 Punkte
+  - Platz 4: 9 Punkte
+  - Platz 5: 6 Punkte
+  - Platz 6: 4 Punkte
+  - Platz 7: 2 Punkte
+  - Platz 8+: 1 Punkt
+- Admin-Bereich „Quizt Liga verwalten“ ergänzt.
+- Event kann manuell ins Liga-Ranking übernommen werden.
+- Teamnamen und Liga-Punkte können vor Übernahme korrigiert werden.
+- Manuelle Korrekturen sind möglich.
+- Quartalsranking und All-Time-Ranking werden berechnet.
+- Anzeige auf der Code-Seite kann im Admin aktiviert/deaktiviert werden.
+- Firebase Rules haben einen neuen Bereich `quiztScoreboard/league`.
