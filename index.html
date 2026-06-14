@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quizt Punkteübersicht</title>
+  <meta name="description" content="Digitale Punkteübersicht für Quizt Veranstaltungen." />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="./styles.css?v=31" />
+  <script>
+    window.QUIZT_MOD_REDIRECT_V31 = true;
+    const __quiztMod = new URLSearchParams(location.search).get("mod") || new URLSearchParams(location.search).get("moderator");
+    if (__quiztMod && !location.pathname.endsWith("/moderator.html")) {
+      location.replace(new URL(`moderator.html?mod=${encodeURIComponent(__quiztMod)}`, location.href).toString());
+    }
+  </script>
+</head>
+<body>
+  <div class="bg-orb bg-orb-one"></div>
+  <div class="bg-orb bg-orb-two"></div>
+  <div class="question-cloud" aria-hidden="true">? ? ?</div>
+
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Quizt Startseite">
+      <img id="brandLogo" class="brand-logo hidden" src="" alt="Quizt" />
+      <span id="brandFallback" class="brand-fallback">
+        <span class="brand-mark">?</span>
+        <span>
+          <strong>Quizt</strong>
+          <small>Punkteübersicht</small>
+        </span>
+      </span>
+    </a>
+  </header>
+
+  <main class="layout">
+    <section id="publicView" class="hero-card">
+      <div class="eyebrow">Live Ranking</div>
+      <h1>Event-Code eingeben</h1>
+      <p class="lead">Gib den 4-stelligen Code deines Quizt Events ein und sieh den veröffentlichten Punktestand.</p>
+
+      <form id="codeForm" class="code-form" autocomplete="off">
+        <label class="sr-only" for="eventCodeInput">Event-Code</label>
+        <input id="eventCodeInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="1234" aria-label="4-stelliger Event-Code" />
+        <button class="primary-btn" type="submit">Ranking öffnen</button>
+      </form>
+
+      <form id="passwordForm" class="password-form hidden" autocomplete="off">
+        <label for="eventPasswordInput">Privates Event Passwort</label>
+        <div class="inline-form-row">
+          <input id="eventPasswordInput" type="password" placeholder="Passwort eingeben" />
+          <button class="primary-btn" type="submit">Freischalten</button>
+        </div>
+      </form>
+      <p id="publicMessage" class="message" role="status"></p>
+      <a class="insta-cta hero-insta" href="https://www.instagram.com/quiz_mit_twist/" target="_blank" rel="noopener noreferrer">Folg uns auf Instagram · @quiz_mit_twist</a>
+    </section>
+
+    <section id="rankingView" class="scoreboard hidden" aria-live="polite">
+      <div class="scoreboard-head">
+        <div>
+          <div id="eventCodeBadge" class="event-code-badge"></div>
+          <h2 id="eventTitle">Quizt Event</h2>
+          <p id="eventUpdated" class="muted"></p>
+        </div>
+        <button id="backToCodeBtn" class="ghost-btn" type="button">Anderer Code</button>
+      </div>
+
+      <div id="winnerCard" class="winner-card"></div>
+      <div id="podiumView" class="podium hidden"></div>
+      <div id="rankingList" class="ranking-list"></div>
+
+      <details class="detail-card" open>
+        <summary>Rundenübersicht anzeigen</summary>
+        <div class="breakdown-toolbar">
+          <label>Ranking anzeigen nach
+            <select id="roundSortSelect"></select>
+          </label>
+        </div>
+        <div id="roundBreakdown" class="breakdown"></div>
+      </details>
+
+      <section class="share-card" aria-label="Quizt teilen">
+        <div class="share-copy">
+          <div class="eyebrow">Teilen</div>
+          <h3>Teile deinen schönsten Quizt-Moment</h3>
+          <p>Öffne die Story-Vorlage, speichere sie als Bild und füge sie in Instagram mit deinem Lieblingsfoto vom Abend zusammen.</p>
+        </div>
+        <div class="share-actions share-actions-single">
+          <button id="openStoryTemplateBtn" class="primary-btn" type="button">Story-Vorlage öffnen</button>
+          <a class="insta-cta ranking-insta" href="https://www.instagram.com/quiz_mit_twist/" target="_blank" rel="noopener noreferrer">Instagram öffnen · @quiz_mit_twist</a>
+        </div>
+      </section>
+    </section>
+
+    <section id="storyTemplateView" class="story-template-view hidden" aria-label="Story-Vorlage">
+      <div class="story-template-head">
+        <div>
+          <div class="eyebrow">Story-Vorlage</div>
+          <h2>Teile deinen Quizt-Moment</h2>
+          <p class="muted">Erst speichern, dann in Instagram als Story nutzen und dein eigenes Foto darüberlegen.</p>
+        </div>
+        <button id="backFromStoryBtn" class="ghost-btn" type="button">Zurück zum Ranking</button>
+      </div>
+
+      <div class="story-template-grid">
+        <div class="story-steps-card">
+          <h3>So geht’s</h3>
+          <ol class="story-steps">
+            <li>Bild unten lange gedrückt halten.</li>
+            <li>„Bild sichern“ antippen.</li>
+            <li>Instagram öffnen und Vorlage als Story nutzen.</li>
+            <li>Eigenes Foto darüberlegen und <strong>@quiz_mit_twist</strong> markieren.</li>
+          </ol>
+          <a class="primary-btn story-instagram-btn" href="https://www.instagram.com/quiz_mit_twist/" target="_blank" rel="noopener noreferrer">Instagram öffnen</a>
+          <p class="small-note muted">Auf iPhone: Lange auf das Bild drücken. Nicht über Downloads gehen.</p>
+        </div>
+
+        <div class="story-preview-frame">
+          <img src="./quizt-story-template.png" alt="Quizt Story-Vorlage" />
+        </div>
+      </div>
+    </section>
+
+    <section id="moderatorView" class="moderator-view hidden" aria-label="Moderator-Ansicht">
+      <div class="moderator-head">
+        <div>
+          <div class="eyebrow">Moderator-View</div>
+          <h2 id="moderatorTitle">Moderator-Ansicht</h2>
+          <p id="moderatorMeta" class="muted"></p>
+        </div>
+        <a id="moderatorBackLink" class="ghost-btn moderator-back" href="./">Normale Ansicht</a>
+      </div>
+
+      <div id="moderatorStatus" class="message"></div>
+      <div id="moderatorContent" class="moderator-content"></div>
+    </section>
+
+    <section id="adminPanel" class="admin-panel hidden">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">Admin</div>
+          <h2>Quizt verwalten</h2>
+        </div>
+        <button id="adminCloseBtn" class="ghost-btn" type="button">Schließen</button>
+      </div>
+
+      <div id="loginBox" class="login-box">
+        <label>E-Mail
+          <input id="adminEmail" type="email" placeholder="deine@email.de" autocomplete="email" />
+        </label>
+        <label>Passwort
+          <input id="adminPassword" type="password" placeholder="Passwort" autocomplete="current-password" />
+        </label>
+        <button id="loginBtn" class="primary-btn" type="button">Einloggen</button>
+        <p id="loginMessage" class="message"></p>
+      </div>
+
+      <div id="adminWorkspace" class="hidden">
+        <div class="admin-actions">
+          <button id="logoutBtn" class="ghost-btn" type="button">Ausloggen</button>
+          <button id="newEventBtn" class="primary-btn" type="button">Neues Quizt Event</button>
+        </div>
+
+        <div class="admin-grid">
+          <aside class="event-list-card">
+            <h3>Events</h3>
+            <div id="adminEventList" class="event-list"></div>
+          </aside>
+
+          <section id="editorCard" class="editor-card hidden">
+            <div class="editor-head">
+              <div>
+                <h3 id="editorHeadline">Event bearbeiten</h3>
+                <p id="editorCode" class="muted"></p>
+                <div id="draftStatusBox" class="draft-status-box">
+                  <strong id="draftStatusLabel">Status wird geladen</strong>
+                  <span id="draftStatusMeta">Noch keine Statusdaten.</span>
+                </div>
+                <div class="moderator-link-box">
+                  <input id="moderatorLinkInput" type="text" readonly aria-label="Moderator-Link" />
+                  <button id="copyModeratorLinkBtn" class="tiny-btn" type="button">Moderator-Link kopieren</button>
+                </div>
+              </div>
+              <div class="editor-actions">
+                <button id="saveDraftBtn" class="ghost-btn" type="button">Entwurf speichern</button>
+                <button id="publishBtn" class="primary-btn" type="button">Änderungen veröffentlichen</button>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <label>Titel
+                <input id="quizTitleInput" type="text" placeholder="Quizt im Blue Shell" />
+              </label>
+              <label>Hinweis öffentlich
+                <input id="quizNoteInput" type="text" placeholder="optional, z. B. Runde 3 läuft" />
+              </label>
+            </div>
+
+            <div class="switch-grid">
+              <label class="switch-card">
+                <input id="eventFinishedInput" type="checkbox" />
+                <span>
+                  <strong>Event beendet</strong>
+                  <small>Zeigt öffentlich den finalen Gewinner an.</small>
+                </span>
+              </label>
+              <label class="switch-card">
+                <input id="showPodiumInput" type="checkbox" />
+                <span>
+                  <strong>Treppchen anzeigen</strong>
+                  <small>Hebt Platz 1 bis 3 visuell hervor.</small>
+                </span>
+              </label>
+              <label class="switch-card">
+                <input id="privateEventInput" type="checkbox" />
+                <span>
+                  <strong>Privates Event</strong>
+                  <small>Gäste brauchen Code plus Passwort.</small>
+                </span>
+              </label>
+            </div>
+
+            <div id="privatePasswordBox" class="form-grid hidden">
+              <label>Gast-Passwort
+                <input id="guestPasswordInput" type="text" placeholder="z. B. firma2026" />
+              </label>
+            </div>
+
+            <div class="editor-section">
+              <div class="section-title-row">
+                <h4>Teams</h4>
+                <button id="addTeamBtn" class="tiny-btn" type="button">Team hinzufügen</button>
+              </div>
+              <div id="teamsEditor" class="teams-editor"></div>
+            </div>
+
+            <div class="editor-section">
+              <div class="section-title-row">
+                <div>
+                  <h4>Runden</h4>
+                  <p class="muted small-note">Zwischenrunden legst du einfach als normale Runde an und nennst sie z. B. „Zwischenrunde 1“.</p>
+                </div>
+                <button id="addRoundBtn" class="tiny-btn" type="button">Runde hinzufügen</button>
+              </div>
+              <div id="roundsEditor"></div>
+            </div>
+
+            <div class="editor-section admin-preview-section">
+              <div class="section-title-row">
+                <div>
+                  <h4>Admin-Vorschau</h4>
+                  <p class="muted small-note">Nur für dich sichtbar. Gäste sehen diese Punkte erst nach „Änderungen veröffentlichen“.</p>
+                </div>
+              </div>
+              <div id="adminPreview" class="admin-preview"></div>
+            </div>
+
+            <p id="editorMessage" class="message"></p>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Quizt</span>
+    <a href="https://www.instagram.com/quiz_mit_twist/" target="_blank" rel="noopener noreferrer">Instagram @quiz_mit_twist</a>
+    <button id="adminToggleBtn" class="admin-footer-btn" type="button">Admin</button>
+  </footer>
+
+  <script type="module" src="./app.js?v=31"></script>
+</body>
+</html>

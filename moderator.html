@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quizt Moderator-View</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://www.gstatic.com" />
+  <link rel="stylesheet" href="./styles.css?v=35" />
+  <style>
+    body { min-height: 100vh; }
+    .mod-shell {
+      width: min(1120px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: clamp(18px, 4vw, 42px) 0 70px;
+      position: relative;
+      z-index: 2;
+    }
+    .mod-logo {
+      display: block;
+      width: min(150px, 42vw);
+      margin: 0 auto 24px;
+    }
+    .mod-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(255, 216, 74, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(16, 27, 48, 0.94), rgba(6, 12, 24, 0.94));
+      box-shadow: var(--shadow);
+      padding: clamp(18px, 3vw, 34px);
+    }
+    .mod-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+    .mod-head h1 {
+      margin: 5px 0 8px;
+      font-size: clamp(2rem, 6vw, 4.2rem);
+      line-height: 1.02;
+    }
+    .mod-content {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+    .mod-winner {
+      padding: 22px;
+      border-radius: 26px;
+      border: 1px solid rgba(255, 216, 74, 0.25);
+      background: radial-gradient(circle at 100% 40%, rgba(40, 230, 255, 0.16), transparent 42%), rgba(255, 216, 74, 0.08);
+    }
+    .mod-winner span {
+      color: var(--muted);
+      font-size: 1.05rem;
+      font-weight: 900;
+    }
+    .mod-winner strong {
+      display: block;
+      color: var(--yellow);
+      font-size: clamp(2rem, 7vw, 4.4rem);
+      line-height: 1.02;
+      margin-top: 8px;
+      overflow-wrap: anywhere;
+    }
+    .mod-winner p {
+      color: var(--text);
+      font-weight: 900;
+      margin: 12px 0 0;
+    }
+    .mod-ranking,
+    .mod-rounds {
+      padding: 20px;
+      border-radius: 24px;
+      background: rgba(4, 10, 20, 0.88);
+      border: 1px solid rgba(40, 230, 255, 0.20);
+    }
+    .mod-ranking-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .mod-rank-row {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .mod-rank-row span {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      color: var(--cyan);
+      background: rgba(40, 230, 255, 0.12);
+      font-weight: 1000;
+    }
+    .mod-rank-row strong {
+      font-size: clamp(1.25rem, 4vw, 2.2rem);
+      overflow-wrap: anywhere;
+    }
+    .mod-rank-row b {
+      color: var(--yellow);
+      font-size: clamp(1.6rem, 5vw, 3rem);
+    }
+    .mod-table-wrap {
+      overflow-x: auto;
+      margin-top: 14px;
+    }
+    .mod-table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+    }
+    .mod-table th,
+    .mod-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(129, 154, 190, 0.16);
+      text-align: left;
+    }
+    .mod-table thead th {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.82rem;
+    }
+    .mod-table td {
+      font-weight: 1000;
+      font-size: 1.15rem;
+    }
+    .mod-table td.winner {
+      color: var(--yellow);
+    }
+    .mod-status {
+      margin: 14px 0;
+    }
+
+    .mod-sort-box {
+      display: grid;
+      gap: 8px;
+      width: min(100%, 430px);
+      margin: 8px 0 18px;
+      padding: 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(40, 230, 255, 0.20);
+      background: rgba(40, 230, 255, 0.07);
+    }
+    .mod-sort-box label {
+      color: var(--muted);
+      font-weight: 900;
+    }
+    .mod-sort-box select {
+      width: 100%;
+      min-height: 54px;
+      border-radius: 16px;
+      border: 1px solid rgba(40, 230, 255, 0.24);
+      background: rgba(2, 7, 15, 0.92);
+      color: var(--text);
+      padding: 0 14px;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+    .mod-ranking h2 small {
+      display: block;
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-top: 5px;
+    }
+
+
+    .mod-logo-wrap {
+      width: min(160px, 44vw);
+      margin: 0 auto 22px;
+      min-height: 64px;
+      display: grid;
+      place-items: center;
+    }
+    .mod-logo {
+      display: block;
+      width: 100%;
+      max-height: 86px;
+      object-fit: contain;
+      margin: 0 auto;
+    }
+    .mod-logo-fallback {
+      display: none;
+      color: var(--cyan);
+      font-weight: 1000;
+      font-size: clamp(2.2rem, 12vw, 4rem);
+      letter-spacing: -0.06em;
+      line-height: 1;
+      text-shadow: 0 0 22px rgba(40, 230, 255, 0.22);
+    }
+    .mod-card,
+    .mod-ranking,
+    .mod-rounds,
+    .mod-winner,
+    .mod-sort-box {
+      box-sizing: border-box;
+      max-width: 100%;
+    }
+    .mod-card a.ghost-btn {
+      text-decoration: none !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .mod-table-wrap {
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      border-radius: 18px;
+      border: 1px solid rgba(40, 230, 255, 0.16);
+    }
+    .mod-table-scroll-note {
+      display: none;
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 10px 0 0;
+    }
+
+    @media (max-width: 760px) {
+      .mod-shell { width: min(100% - 20px, 1120px); }
+      .mod-card { padding: 16px 12px; }
+      .mod-rank-row { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; padding: 12px; }
+      .mod-rank-row span { width: 36px; height: 36px; }
+      .mod-rounds { padding: 14px; }
+    }
+
+    @media (max-width: 760px) {
+      html, body {
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+      .mod-shell {
+        width: 100%;
+        max-width: 100%;
+        padding: 16px 10px 80px;
+        box-sizing: border-box;
+      }
+      .mod-logo-wrap {
+        width: min(132px, 38vw);
+        min-height: 52px;
+        margin-bottom: 14px;
+      }
+      .mod-card {
+        width: 100%;
+        max-width: 100%;
+        padding: 18px 14px;
+        border-radius: 26px;
+        overflow: hidden;
+      }
+      .mod-head {
+        display: grid;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .mod-head h1 {
+        font-size: clamp(2rem, 11vw, 3.15rem);
+        line-height: 1.04;
+        overflow-wrap: anywhere;
+      }
+      #modMeta {
+        font-size: clamp(1.05rem, 5vw, 1.35rem);
+        line-height: 1.28;
+        overflow-wrap: anywhere;
+      }
+      .mod-card a.ghost-btn {
+        width: 100%;
+        min-height: 58px;
+        padding: 0 14px;
+        font-size: 0.95rem;
+      }
+      .mod-sort-box {
+        width: 100%;
+        padding: 14px;
+        margin: 12px 0 16px;
+      }
+      .mod-sort-box select {
+        min-height: 52px;
+        font-size: 1rem;
+      }
+      .mod-status {
+        font-size: 1rem;
+        line-height: 1.35;
+      }
+      .mod-content {
+        gap: 14px;
+      }
+      .mod-winner,
+      .mod-ranking,
+      .mod-rounds {
+        padding: 16px 14px;
+        border-radius: 22px;
+      }
+      .mod-winner strong {
+        font-size: clamp(2rem, 10vw, 3.2rem);
+      }
+      .mod-ranking h2 {
+        font-size: clamp(1.35rem, 6vw, 2rem);
+      }
+      .mod-rank-row {
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 12px 10px;
+      }
+      .mod-rank-row span {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+      }
+      .mod-rank-row strong {
+        font-size: clamp(1.1rem, 5.6vw, 1.65rem);
+        line-height: 1.12;
+      }
+      .mod-rank-row b {
+        font-size: clamp(1.45rem, 7vw, 2rem);
+      }
+      .mod-table-scroll-note {
+        display: block;
+      }
+      .mod-table-wrap {
+        width: 100%;
+        margin-top: 12px;
+        padding-bottom: 6px;
+      }
+      .mod-table {
+        width: max-content;
+        min-width: 760px;
+      }
+      .mod-table th,
+      .mod-table td {
+        padding: 12px 14px;
+        white-space: nowrap;
+      }
+      .mod-table th:first-child,
+      .mod-table td:first-child {
+        min-width: 210px;
+        white-space: normal;
+      }
+    }
+    @media (max-width: 390px) {
+      .mod-shell {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+      .mod-card {
+        padding: 16px 12px;
+      }
+      .mod-head h1 {
+        font-size: clamp(1.85rem, 10vw, 2.6rem);
+      }
+      .mod-rank-row {
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+      }
+    }
+
+
+    /* V34: Kleine Displays und große Schrift sicher abfangen */
+    .mod-rank-row {
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .mod-rank-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .mod-rank-score {
+      display: grid;
+      justify-items: end;
+      min-width: 64px;
+      max-width: 120px;
+      line-height: 1;
+    }
+    .mod-rank-score em {
+      font-style: normal;
+      color: var(--yellow);
+    }
+    .mod-rank-score small {
+      color: var(--muted);
+      font-size: 0.62rem;
+      line-height: 1.05;
+      text-align: right;
+      margin-top: 4px;
+      max-width: 100px;
+      white-space: normal;
+    }
+    .mod-table-wrap {
+      position: relative;
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: scroll !important;
+      overflow-y: hidden !important;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      scrollbar-width: auto;
+      box-sizing: border-box;
+    }
+    .mod-table {
+      table-layout: fixed;
+      width: 920px !important;
+      min-width: 920px !important;
+      max-width: none !important;
+    }
+    .mod-table th,
+    .mod-table td {
+      box-sizing: border-box;
+    }
+    .mod-table th:first-child {
+      width: 230px;
+    }
+    .mod-table th:not(:first-child),
+    .mod-table td:not(:first-child) {
+      width: 120px;
+      text-align: center;
+    }
+    @media (max-width: 760px) {
+      .mod-ranking {
+        overflow: visible;
+      }
+      .mod-ranking-list {
+        width: 100%;
+        min-width: 0;
+      }
+      .mod-rank-row {
+        grid-template-columns: 38px minmax(0, 1fr);
+        align-items: start;
+        gap: 10px;
+      }
+      .mod-rank-place {
+        grid-row: 1 / span 2;
+      }
+      .mod-rank-name {
+        grid-column: 2;
+        font-size: clamp(1.05rem, 5.2vw, 1.48rem) !important;
+        line-height: 1.12 !important;
+        padding-right: 0;
+      }
+      .mod-rank-score {
+        grid-column: 2;
+        justify-self: start;
+        justify-items: start;
+        max-width: 100%;
+        min-width: 0;
+        margin-top: 6px;
+      }
+      .mod-rank-score em {
+        font-size: clamp(1.7rem, 8vw, 2.4rem);
+      }
+      .mod-rank-score small {
+        text-align: left;
+        max-width: 100%;
+        font-size: 0.72rem;
+      }
+      .mod-table-wrap {
+        margin-left: 0;
+        margin-right: 0;
+        padding-bottom: 12px;
+        border-radius: 16px;
+        overscroll-behavior-x: contain;
+      }
+      .mod-table {
+        width: 860px !important;
+        min-width: 860px !important;
+      }
+      .mod-table th:first-child {
+        width: 220px;
+      }
+      .mod-table th:not(:first-child),
+      .mod-table td:not(:first-child) {
+        width: 115px;
+      }
+      .mod-table th,
+      .mod-table td {
+        padding: 11px 12px;
+        font-size: 1rem;
+      }
+    }
+    @media (max-width: 390px) {
+      .mod-rank-row {
+        grid-template-columns: 34px minmax(0, 1fr);
+        padding: 11px 9px;
+      }
+      .mod-rank-place {
+        width: 30px !important;
+        height: 30px !important;
+      }
+      .mod-rank-score em {
+        font-size: clamp(1.55rem, 8vw, 2.05rem);
+      }
+      .mod-table {
+        width: 820px !important;
+        min-width: 820px !important;
+      }
+    }
+
+
+    /* V35: Runden-Tabelle im Moderator-View wirklich horizontal scrollbar machen */
+    .mod-rounds {
+      overflow: visible !important;
+      max-width: 100% !important;
+    }
+    .mod-table-outer {
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
+      touch-action: pan-x !important;
+      overscroll-behavior-x: contain !important;
+      box-sizing: border-box !important;
+      border-radius: 18px;
+      border: 1px solid rgba(40, 230, 255, 0.18);
+      margin-top: 12px;
+      padding-bottom: 10px;
+      scrollbar-gutter: stable;
+    }
+    .mod-table-wrap {
+      width: max-content !important;
+      min-width: max-content !important;
+      max-width: none !important;
+      overflow: visible !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .mod-table {
+      display: table !important;
+      width: max-content !important;
+      min-width: max-content !important;
+      max-width: none !important;
+      table-layout: auto !important;
+      border-collapse: collapse;
+    }
+    .mod-table th,
+    .mod-table td {
+      min-width: 120px !important;
+      width: 120px !important;
+      white-space: nowrap !important;
+      text-align: center !important;
+    }
+    .mod-table th:first-child,
+    .mod-table td:first-child {
+      min-width: 230px !important;
+      width: 230px !important;
+      white-space: normal !important;
+      text-align: left !important;
+    }
+    .mod-table-scroll-note {
+      display: block !important;
+    }
+    @media (max-width: 760px) {
+      .mod-table-outer {
+        display: block !important;
+        width: 100% !important;
+        max-width: calc(100vw - 48px) !important;
+        overflow-x: scroll !important;
+        overflow-y: hidden !important;
+      }
+      .mod-table th,
+      .mod-table td {
+        min-width: 112px !important;
+        width: 112px !important;
+        padding: 12px 10px !important;
+      }
+      .mod-table th:first-child,
+      .mod-table td:first-child {
+        min-width: 205px !important;
+        width: 205px !important;
+      }
+    }
+    @media (max-width: 390px) {
+      .mod-table-outer {
+        max-width: calc(100vw - 40px) !important;
+      }
+      .mod-table th,
+      .mod-table td {
+        min-width: 104px !important;
+        width: 104px !important;
+      }
+      .mod-table th:first-child,
+      .mod-table td:first-child {
+        min-width: 190px !important;
+        width: 190px !important;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="bg-orb bg-orb-one"></div>
+  <div class="bg-orb bg-orb-two"></div>
+  <div class="question-cloud">???</div>
+
+  <main class="mod-shell">
+    <div class="mod-logo-wrap">
+      <img class="mod-logo" src="./logo.png" alt="Quizt Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <div class="mod-logo-fallback" aria-label="Quizt Logo">Quizt</div>
+    </div>
+    <section class="mod-card">
+      <div class="mod-head">
+        <div>
+          <div class="eyebrow">Moderator-View</div>
+          <h1 id="modTitle">Moderator-Ansicht</h1>
+          <p id="modMeta" class="muted">Entwurf wird geladen ...</p>
+        </div>
+        <a class="ghost-btn" href="./">Normale Ansicht</a>
+      </div>
+
+      <div class="mod-sort-box">
+        <label for="modSortSelect">Ranking anzeigen nach</label>
+        <select id="modSortSelect">
+          <option value="total">Gesamtwertung</option>
+        </select>
+      </div>
+
+      <div id="modStatus" class="message mod-status">Moderator-View wird geladen ...</div>
+      <div id="modContent" class="mod-content"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA5kq-HiCkVroQLCwwVc24C8XYPJTZvegM",
+      authDomain: "queue-tracker-3fa3c.firebaseapp.com",
+      databaseURL: "https://queue-tracker-3fa3c-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "queue-tracker-3fa3c",
+      storageBucket: "queue-tracker-3fa3c.firebasestorage.app",
+      messagingSenderId: "132132188124",
+      appId: "1:132132188124:web:ecc130f7ee7ac9d61be919",
+      measurementId: "G-3QBWJHGDXG"
+    };
+
+    const ROOT_PATH = "quiztScoreboard";
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const $ = (selector) => document.querySelector(selector);
+    const params = new URLSearchParams(location.search);
+    const modCode = String(params.get("mod") || params.get("moderator") || "").trim().toUpperCase();
+
+    const dom = {
+      title: $("#modTitle"),
+      meta: $("#modMeta"),
+      status: $("#modStatus"),
+      content: $("#modContent"),
+      sortSelect: $("#modSortSelect")
+    };
+
+    let currentEvent = null;
+
+    function escapeHtml(value = "") {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function scoreNumber(value) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function formatDate(value) {
+      if (!value) return "noch nicht";
+      return new Intl.DateTimeFormat("de-DE", {
+        dateStyle: "short",
+        timeStyle: "short"
+      }).format(new Date(value));
+    }
+
+    function normalizeEvent(event) {
+      const clean = { ...(event || {}) };
+      clean.teams = Array.isArray(clean.teams) ? clean.teams : [];
+      clean.rounds = Array.isArray(clean.rounds) ? clean.rounds : [];
+      return clean;
+    }
+
+    function calculateRoundWinnerIds(round, teams) {
+      const values = teams.map((team) => ({ id: team.id, score: scoreNumber(round?.scores?.[team.id]) }));
+      const max = Math.max(...values.map((entry) => entry.score));
+      if (!Number.isFinite(max) || max <= 0) return new Set();
+      return new Set(values.filter((entry) => entry.score === max).map((entry) => entry.id));
+    }
+
+    function getTeamTotal(event, teamId) {
+      return event.rounds.reduce((sum, round) => sum + scoreNumber(round?.scores?.[teamId]), 0);
+    }
+
+    function getSelectedRound(event) {
+      const value = dom.sortSelect?.value || "total";
+      if (value === "total") return null;
+      return event.rounds.find((round) => round.id === value) || null;
+    }
+
+    function calculateRanking(event) {
+      const normalized = normalizeEvent(event);
+      const selectedRound = getSelectedRound(normalized);
+
+      return normalized.teams.map((team) => {
+        const total = getTeamTotal(normalized, team.id);
+        const displayScore = selectedRound ? scoreNumber(selectedRound?.scores?.[team.id]) : total;
+        return { ...team, total, displayScore };
+      }).sort((a, b) => b.displayScore - a.displayScore || b.total - a.total || String(a.name).localeCompare(String(b.name), "de"));
+    }
+
+    function updateSortOptions(event) {
+      if (!dom.sortSelect) return;
+      const currentValue = dom.sortSelect.value || "total";
+      dom.sortSelect.innerHTML = `
+        <option value="total">Gesamtwertung</option>
+        ${event.rounds.map((round) => `<option value="${escapeHtml(round.id)}">${escapeHtml(round.name)}</option>`).join("")}
+      `;
+
+      if ([...dom.sortSelect.options].some((option) => option.value === currentValue)) {
+        dom.sortSelect.value = currentValue;
+      }
+    }
+
+    function showStatus(text, type = "") {
+      dom.status.textContent = text;
+      dom.status.className = `message mod-status ${type}`;
+    }
+
+    function render(event) {
+      const normalized = normalizeEvent(event);
+      updateSortOptions(normalized);
+      const selectedRound = getSelectedRound(normalized);
+      const ranking = calculateRanking(normalized);
+      const rounds = normalized.rounds;
+      const roundWinnerMap = new Map(rounds.map((round) => [round.id, calculateRoundWinnerIds(round, normalized.teams)]));
+      const winner = ranking[0];
+      const rankingLabel = selectedRound ? selectedRound.name : "Gesamtwertung";
+      const scoreLabel = selectedRound ? `Punkte in ${selectedRound.name}` : "Gesamtpunkte";
+
+      dom.title.textContent = normalized.title || "Quizt Event";
+      dom.meta.textContent = `Moderator-Code ${modCode} · Gäste-Code ${normalized.code || "----"} · Entwurf gespeichert ${formatDate(normalized.lastDraftSavedAt || normalized.updatedAt)}`;
+      showStatus("Nur für Moderation. Diese Punkte sind für Gäste noch nicht sichtbar.", "success");
+
+      if (!ranking.length) {
+        dom.content.innerHTML = "<p class='muted'>Noch keine Teams vorhanden.</p>";
+        return;
+      }
+
+      dom.content.innerHTML = `
+        <section class="mod-winner">
+          <span>Aktuell Platz 1</span>
+          <strong>${escapeHtml(winner.name)}</strong>
+          <p>${winner.displayScore} Punkte · ${escapeHtml(rankingLabel)} · Entwurf</p>
+        </section>
+
+        <section class="mod-ranking">
+          <h2>Ranking zum Vorlesen <small>${escapeHtml(rankingLabel)}</small></h2>
+          <div class="mod-ranking-list">
+            ${ranking.map((team, index) => `
+              <div class="mod-rank-row">
+                <span class="mod-rank-place">${index + 1}</span>
+                <strong class="mod-rank-name">${escapeHtml(team.name)}</strong>
+                <b class="mod-rank-score"><em>${team.displayScore}</em><small>${escapeHtml(scoreLabel)}</small></b>
+              </div>
+            `).join("")}
+          </div>
+        </section>
+
+        <details class="mod-rounds" open>
+          <summary>Rundenpunkte</summary>
+          <p class="mod-table-scroll-note">↔ Tabelle direkt hier seitlich schieben, um alle Runden und Punkte zu sehen.</p>
+          <div class="mod-table-outer">
+            <div class="mod-table-wrap">
+              <table class="mod-table">
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  ${rounds.map((round) => `<th>${escapeHtml(round.name)}</th>`).join("")}
+                  <th>Gesamt</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ranking.map((team, index) => `
+                  <tr>
+                    <th>${index + 1}. ${escapeHtml(team.name)}</th>
+                    ${rounds.map((round) => {
+                      const score = scoreNumber(round?.scores?.[team.id]);
+                      const isWinner = (roundWinnerMap.get(round.id) || new Set()).has(team.id);
+                      return `<td class="${isWinner ? "winner" : ""}">${score}${isWinner ? " ★" : ""}</td>`;
+                    }).join("")}
+                    <td>${team.total}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      `;
+    }
+
+    dom.sortSelect?.addEventListener("change", () => {
+      if (currentEvent) render(currentEvent);
+    });
+
+    if (!modCode) {
+      dom.meta.textContent = "";
+      showStatus("Kein Moderator-Code gefunden.", "error");
+    } else {
+      onValue(ref(db, `${ROOT_PATH}/moderatorViews/${modCode}`), (snapshot) => {
+        const event = snapshot.val();
+        if (!event) {
+          dom.title.textContent = "Moderator-Ansicht";
+          dom.meta.textContent = `Moderator-Code ${modCode}`;
+          dom.content.innerHTML = "";
+          showStatus("Für diesen Moderator-Code wurde kein Entwurf gefunden. Bitte im Admin-Bereich einmal „Entwurf speichern“ klicken.", "error");
+          return;
+        }
+        currentEvent = event;
+        render(event);
+      }, (error) => {
+        showStatus(`Moderator-View konnte nicht geladen werden: ${error.message}`, "error");
+      });
+    }
+  </script>
+</body>
+</html>

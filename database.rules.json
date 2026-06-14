@@ -1,0 +1,56 @@
+{
+  "rules": {
+    "queueTracker": {
+      ".read": true,
+      ".write": true
+    },
+    "streamTools": {
+      "roadToGlory": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "pullCounter": {
+      ".read": true,
+      ".write": true
+    },
+    "offerTracker": {
+      ".read": true,
+      ".write": true
+    },
+    "gradingTracker": {
+      ".read": true,
+      ".write": true
+    },
+    "otakuyaDePrices": {
+      ".read": true,
+      ".write": true
+    },
+    "otakuyaPriceRadar": {
+      ".read": true,
+      ".write": true
+    },
+    "quiztScoreboard": {
+      "codeIndex": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === 'FMZW16NbeQXPKmVE50BcnbRYI2o1'"
+      },
+      "publicEvents": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === 'FMZW16NbeQXPKmVE50BcnbRYI2o1'"
+      },
+      "privateEvents": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === 'FMZW16NbeQXPKmVE50BcnbRYI2o1'"
+      },
+      "adminEvents": {
+        ".read": "auth != null && auth.uid === 'FMZW16NbeQXPKmVE50BcnbRYI2o1'",
+        ".write": "auth != null && auth.uid === 'FMZW16NbeQXPKmVE50BcnbRYI2o1'"
+      },
+      "moderatorViews": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === 'FMZW16NbeQXPKmVE50BcnbRYI2o1'"
+      }
+    }
+  }
+}
