@@ -125,3 +125,20 @@ Firebase:
 - Auf Mobile werden „Liga“ und „Anderer Code“ nicht mehr als riesige Vollbreiten-Buttons angezeigt.
 - Öffentliche Liga-Ansicht blendet die Versionsplakette aus.
 - Öffentliche Liga-Ansicht nutzt neutraleren Headertext.
+
+
+## v6 Liga-Wording
+
+- Öffentliches Liga-Ranking nutzt jetzt kein technisches „Eintrag/Einträge“ mehr.
+- Anzeige lautet jetzt z. B. „bei 1 Quizt-Event dabei“ oder „bei 3 Quizt-Events dabei“.
+- Gleiches Wording auch in der Liga-Ansicht der Moderator-View.
+- Mobile Ranking-Karten in der öffentlichen Liga wurden etwas kompakter und klarer strukturiert.
+
+
+## v7 Wording-Fix & Cache-Bust
+
+- Öffentliche Liga-Links erhalten `v=7`, damit alte `liga.html` nicht weiter aus dem Browsercache angezeigt wird.
+- Öffentliches Ranking verwendet jetzt konsequent:
+  - `bei 1 Quizt-Event dabei`
+  - `bei X Quizt-Events dabei`
+- Restliche sichtbare Liga-Wording-Stellen wurden von „Eintrag“ auf „Liga-Event“ bzw. Quizt-Event-Wording umgestellt.

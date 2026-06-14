@@ -878,6 +878,11 @@
       return [];
     }
 
+    function moderatorParticipationLabel(count) {
+      const amount = Number(count) || 0;
+      return amount === 1 ? "bei 1 Quizt-Event dabei" : `bei ${amount} Quizt-Events dabei`;
+    }
+
     function calculateLeagueTables() {
       const quarterKey = getQuarterKey();
       const quarter = new Map();
@@ -925,7 +930,7 @@
                 <span>${index + 1}.</span>
                 <div>
                   <strong>${escapeHtml(row.name)}</strong>
-                  <small>${row.entries} ${row.entries === 1 ? "Eintrag" : "Einträge"}</small>
+                  <small>${moderatorParticipationLabel(row.entries)}</small>
                 </div>
                 <b>${row.points}</b>
               </article>

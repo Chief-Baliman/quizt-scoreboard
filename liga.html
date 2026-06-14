@@ -125,6 +125,35 @@
       .preview-row label, .preview-row .points, .rank-row .points { grid-column:2; text-align:left; }
       .entry-row { grid-template-columns:1fr; }
     }
+
+    .public-clean .rank-row .small {
+      color: var(--muted);
+      font-size: clamp(0.86rem, 3.2vw, 1rem);
+      font-weight: 800;
+      line-height: 1.25;
+    }
+    .public-clean .rank-row .points {
+      font-size: clamp(1.8rem, 8vw, 3rem);
+    }
+    @media (max-width:800px) {
+      .public-clean .rank-row {
+        grid-template-columns: 54px minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 16px;
+      }
+      .public-clean .rank-row .place {
+        font-size: 2rem;
+      }
+      .public-clean .rank-row .points {
+        grid-column: 3;
+        text-align: right;
+      }
+      .public-clean .rank-row .small {
+        grid-column: 2 / 4;
+        margin-top: -4px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -134,7 +163,7 @@
         <h1>Quizt Liga</h1>
         <p>Aktuelles Quizt-Liga-Ranking.</p>
       </div>
-      <div class="pill">liga v5</div>
+      <div class="pill">liga v7</div>
     </div>
 
     <div class="actions top-links">
@@ -229,7 +258,7 @@
         </div>
         <div class="actions">
           <button id="saveSettingsBtn" class="secondary" type="button">Anzeige-Einstellungen speichern</button>
-          <a id="publicPreviewLink" class="nav-btn" href="./liga.html?view=public" target="_blank" rel="noopener noreferrer">Öffentliche Liga ansehen</a>
+          <a id="publicPreviewLink" class="nav-btn" href="./liga.html?view=public&v=7" target="_blank" rel="noopener noreferrer">Öffentliche Liga ansehen</a>
         </div>
         <div id="settingsMsg" class="message"></div>
       </section>
@@ -451,9 +480,14 @@
       return { quarter: sort(quarter), all: sort(all), quarterNow };
     }
 
+    function participationLabel(count) {
+      const amount = Number(count) || 0;
+      return amount === 1 ? "bei 1 Quizt-Event dabei" : `bei ${amount} Quizt-Events dabei`;
+    }
+
     function renderRanking(target, rows) {
       if (!rows.length) {
-        target.innerHTML = "<p class='muted'>Noch keine Einträge.</p>";
+        target.innerHTML = "<p class='muted'>Noch keine Quizt-Events in der Liga.</p>";
         return;
       }
       target.innerHTML = rows.map((row, index) => `
@@ -461,7 +495,7 @@
           <div class="place">${index + 1}.</div>
           <strong>${esc(row.name)}</strong>
           <div class="points">${row.points}</div>
-          <span class="small">${row.events} ${row.events === 1 ? "Eintrag" : "Einträge"}</span>
+          <span class="small">${participationLabel(row.events)}</span>
         </div>
       `).join("");
     }
@@ -469,15 +503,15 @@
     function renderEntries() {
       const entries = Object.values(state.leagueResults || {}).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
       if (!entries.length) {
-        nodes.entryList.innerHTML = "<p class='muted'>Noch keine gespeicherten Liga-Einträge.</p>";
+        nodes.entryList.innerHTML = "<p class='muted'>Noch keine gespeicherten Liga-Events.</p>";
         return;
       }
       nodes.entryList.innerHTML = entries.map(entry => `
         <div class="entry-row">
           <div>
-            <strong>${esc(entry.title || "Liga-Eintrag")}</strong>
+            <strong>${esc(entry.title || "Liga-Event")}</strong>
             <span class="small">${esc(entry.quarter || "")} · ${fmt(entry.createdAt)} · ${esc(entry.type || "event")}</span>
-            <span class="small">${teamsOf(entry).map(t => `${esc(t.name)}: ${score(t.points)}`).join(" · ")}</span>
+            <span class="small">${teamsOf(entry).map(t => `${esc(t.name)}: ${score(t.points)} Punkte`).join(" · ")}</span>
           </div>
           <button class="danger" data-delete-entry="${esc(entry.id)}">Löschen</button>
         </div>
@@ -486,7 +520,7 @@
         btn.addEventListener("click", async () => {
           const id = btn.dataset.deleteEntry;
           await remove(ref(db, `${ROOT_PATH}/league/results/${id}`));
-          msg(nodes.firebaseMsg, `Eintrag ${id} gelöscht.`, "success");
+          msg(nodes.firebaseMsg, `Liga-Event ${id} gelöscht.`, "success");
         });
       });
     }
@@ -596,7 +630,7 @@
       nodes.showEventButton.checked = Boolean(state.settings.showEventButton);
       nodes.publicModeSelect.value = state.settings.publicMode || "quarter";
       if (nodes.publicPreviewLink) {
-        nodes.publicPreviewLink.href = `./liga.html?view=public&mode=${encodeURIComponent(state.settings.publicMode || "quarter")}`;
+        nodes.publicPreviewLink.href = `./liga.html?view=public&v=7&mode=${encodeURIComponent(state.settings.publicMode || "quarter")}`;
       }
     }
 
@@ -673,9 +707,9 @@
         }))
       };
 
-      msg(nodes.saveMsg, "Speichere Liga-Eintrag ...");
+      msg(nodes.saveMsg, "Speichere Liga-Event ...");
       await set(ref(db, `${ROOT_PATH}/league/results/${entry.id}`), entry);
-      msg(nodes.saveMsg, "Liga-Eintrag gespeichert.", "success");
+      msg(nodes.saveMsg, "Liga-Event gespeichert.", "success");
       state.leagueResults[entry.id] = entry;
       renderAll();
       selectEvent(state.selectedEventId);
